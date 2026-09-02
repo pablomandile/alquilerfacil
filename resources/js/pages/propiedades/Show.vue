@@ -140,7 +140,11 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         <div class="min-w-0">
                             <p class="truncate font-medium">{{ o.nombre }}</p>
                             <p class="text-muted-foreground truncate text-xs">
-                                {{ [o.email, o.telefono].filter(Boolean).join(' · ') || '—' }}
+                                {{
+                                    [o.email, o.telefono]
+                                        .filter(Boolean)
+                                        .join(' · ') || '—'
+                                }}
                             </p>
                         </div>
                         <span class="shrink-0 font-medium tabular-nums">
@@ -198,7 +202,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                             </td>
                             <td class="px-4 py-2">{{ c.indice }}</td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(c.monto_actual) }}
                             </td>
@@ -244,7 +248,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                             </td>
                             <td class="px-4 py-2">{{ g.a_cargo_de }}</td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(g.monto) }}
                             </td>

@@ -29,7 +29,9 @@ export function pesos(valor: string | number | null | undefined): string {
 }
 
 /** Sin centavos, para los números grandes de las tarjetas del panel. */
-export function pesosRedondos(valor: string | number | null | undefined): string {
+export function pesosRedondos(
+    valor: string | number | null | undefined,
+): string {
     if (valor === null || valor === undefined || valor === '') return '—';
     return monedaCorta.format(Number(valor));
 }

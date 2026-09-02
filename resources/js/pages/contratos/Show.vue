@@ -259,17 +259,17 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                             </td>
                             <td class="px-4 py-2">{{ a.indice }}</td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(a.monto_anterior) }}
                             </td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(a.monto_nuevo) }}
                             </td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ porcentaje(a.variacion) }}
                             </td>
@@ -317,17 +317,17 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                                 {{ c.vencimiento }}
                             </td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(c.monto) }}
                             </td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(c.pagado) }}
                             </td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(c.saldo) }}
                             </td>

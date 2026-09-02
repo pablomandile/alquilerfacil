@@ -15,17 +15,20 @@ const colores: Record<string, string> = {
     // Cobranzas
     pendiente:
         'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    parcial: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+    parcial:
+        'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
     pagado: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
     vencido: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300',
     // Ajustes
-    propuesto: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+    propuesto:
+        'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
     aplicado:
         'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
     rechazado:
         'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
     // Propiedades y contratos
-    disponible: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+    disponible:
+        'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
     alquilada:
         'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
     en_refaccion:

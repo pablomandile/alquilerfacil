@@ -48,7 +48,8 @@ const form = useForm({
     tipo: props.gasto?.tipo ?? 'servicio',
     categoria: props.gasto?.categoria ?? 'luz',
     descripcion: props.gasto?.descripcion ?? '',
-    periodo: props.gasto?.periodo ?? new Date().toISOString().slice(0, 8) + '01',
+    periodo:
+        props.gasto?.periodo ?? new Date().toISOString().slice(0, 8) + '01',
     monto: props.gasto?.monto ?? '',
     vencimiento: props.gasto?.vencimiento ?? '',
     a_cargo_de: props.gasto?.a_cargo_de ?? 'inquilino',

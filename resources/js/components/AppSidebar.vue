@@ -49,19 +49,39 @@ const gestion: NavItem[] = [
 const dinero: NavItem[] = [
     { title: 'Cobranzas', href: rutasCobranzas.index(), icon: Wallet },
     { title: 'Gastos', href: rutasGastos.index(), icon: Receipt },
-    { title: 'Liquidaciones', href: rutasLiquidaciones.index(), icon: PieChart },
+    {
+        title: 'Liquidaciones',
+        href: rutasLiquidaciones.index(),
+        icon: PieChart,
+    },
 ];
 
 // Los índices y las personas son datos de referencia: sólo los toca el admin.
 const referencia = computed<NavItem[]>(() =>
     esAdmin.value
         ? [
-              { title: 'Propietarios', href: rutasPropietarios.index(), icon: Users },
-              { title: 'Inquilinos', href: rutasInquilinos.index(), icon: UserSquare },
-              { title: 'Índices', href: rutasIndices.index(), icon: TrendingUp },
+              {
+                  title: 'Propietarios',
+                  href: rutasPropietarios.index(),
+                  icon: Users,
+              },
+              {
+                  title: 'Inquilinos',
+                  href: rutasInquilinos.index(),
+                  icon: UserSquare,
+              },
+              {
+                  title: 'Índices',
+                  href: rutasIndices.index(),
+                  icon: TrendingUp,
+              },
           ]
         : [
-              { title: 'Propietarios', href: rutasPropietarios.index(), icon: Users },
+              {
+                  title: 'Propietarios',
+                  href: rutasPropietarios.index(),
+                  icon: Users,
+              },
           ],
 );
 </script>

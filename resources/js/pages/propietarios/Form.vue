@@ -27,7 +27,9 @@ const editando = computed(() => props.propietario !== undefined);
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Propietarios', href: rutasPropietarios.index() }],
+        breadcrumbs: [
+            { title: 'Propietarios', href: rutasPropietarios.index() },
+        ],
     },
 });
 

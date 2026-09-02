@@ -68,7 +68,9 @@ defineProps<{
     <div class="flex flex-1 flex-col gap-6 p-4">
         <div>
             <h1 class="text-xl font-semibold tracking-tight">Panel</h1>
-            <p class="text-muted-foreground mt-1 text-sm first-letter:uppercase">
+            <p
+                class="text-muted-foreground mt-1 text-sm first-letter:uppercase"
+            >
                 {{ mes }}
             </p>
         </div>
@@ -101,9 +103,7 @@ defineProps<{
             <StatCard
                 etiqueta="Ajustes para revisar"
                 :valor="resumen.ajustes_propuestos"
-                :acento="
-                    resumen.ajustes_propuestos > 0 ? 'atencion' : 'normal'
-                "
+                :acento="resumen.ajustes_propuestos > 0 ? 'atencion' : 'normal'"
                 :icono="TrendingUp"
             />
         </div>
@@ -122,10 +122,7 @@ defineProps<{
                     </Button>
                 </header>
 
-                <ul
-                    v-if="ajustesPendientes.length"
-                    class="divide-y text-sm"
-                >
+                <ul v-if="ajustesPendientes.length" class="divide-y text-sm">
                     <li
                         v-for="item in ajustesPendientes"
                         :key="item.id"
@@ -225,7 +222,9 @@ defineProps<{
                         class="flex items-baseline justify-between gap-2 text-sm"
                     >
                         <span class="font-medium">{{ indice.nombre }}</span>
-                        <span class="text-muted-foreground text-xs first-letter:uppercase">
+                        <span
+                            class="text-muted-foreground text-xs first-letter:uppercase"
+                        >
                             {{ indice.fecha ?? 'sin datos' }}
                         </span>
                         <span

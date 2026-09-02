@@ -13,7 +13,13 @@ use App\Http\Controllers\RentChargeController;
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+/*
+ * Es una app de gestión interna: no hay nada que mostrarle a un visitante. La
+ * landing de ejemplo de Laravel se reemplaza por una redirección al panel (o al
+ * login, si no hay sesión).
+ */
+Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))
+    ->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');

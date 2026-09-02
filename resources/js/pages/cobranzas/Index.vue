@@ -323,10 +323,7 @@ function borrarPago(id: number) {
                 <Button variant="outline" @click="cobrando = null">
                     Cancelar
                 </Button>
-                <Button
-                    :disabled="formPago.processing"
-                    @click="registrarPago"
-                >
+                <Button :disabled="formPago.processing" @click="registrarPago">
                     Registrar
                 </Button>
             </DialogFooter>

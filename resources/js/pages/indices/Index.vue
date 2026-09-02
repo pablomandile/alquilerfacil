@@ -32,14 +32,10 @@ const sincronizando = ref<string | null>(null);
 
 function sincronizar(fuente?: string) {
     sincronizando.value = fuente ?? 'todos';
-    router.post(
-        rutasIndices.sincronizar().url,
-        fuente ? { fuente } : {},
-        {
-            preserveScroll: true,
-            onFinish: () => (sincronizando.value = null),
-        },
-    );
+    router.post(rutasIndices.sincronizar().url, fuente ? { fuente } : {}, {
+        preserveScroll: true,
+        onFinish: () => (sincronizando.value = null),
+    });
 }
 </script>
 
@@ -94,7 +90,9 @@ function sincronizar(fuente?: string) {
                 >
                     <RefreshCw
                         class="size-4"
-                        :class="sincronizando === serie.fuente && 'animate-spin'"
+                        :class="
+                            sincronizando === serie.fuente && 'animate-spin'
+                        "
                     />
                     Actualizar
                 </Button>
@@ -126,9 +124,7 @@ function sincronizar(fuente?: string) {
                             <td class="px-4 py-1.5 first-letter:uppercase">
                                 {{ v.fecha }}
                             </td>
-                            <td
-                                class="px-4 py-1.5 text-right tabular-nums"
-                            >
+                            <td class="px-4 py-1.5 text-right tabular-nums">
                                 {{ numero(v.valor) }}
                             </td>
                             <td

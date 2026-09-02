@@ -97,7 +97,9 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                                     'font-medium text-amber-600 dark:text-amber-400'
                                 "
                             >
-                                Ajusta {{ c.proximo_ajuste }} ({{ c.indice }}
+                                Ajusta {{ c.proximo_ajuste }} ({{
+                                    c.indice
+                                }}
                                 cada {{ c.frecuencia_meses }} m)
                             </p>
                         </div>
@@ -162,7 +164,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                                 </p>
                             </td>
                             <td
-                                class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
                                 {{ pesos(c.monto_actual) }}
                             </td>

@@ -24,7 +24,9 @@ defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Propietarios', href: rutasPropietarios.index() }],
+        breadcrumbs: [
+            { title: 'Propietarios', href: rutasPropietarios.index() },
+        ],
     },
 });
 
@@ -54,7 +56,9 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
             :icono="Users"
         >
             <Button v-if="esAdmin" as-child size="sm">
-                <Link :href="rutasPropietarios.create()">Cargar el primero</Link>
+                <Link :href="rutasPropietarios.create()"
+                    >Cargar el primero</Link
+                >
             </Button>
         </EmptyState>
 
@@ -93,7 +97,9 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         <dd class="text-muted-foreground">{{ o.telefono }}</dd>
                     </div>
                     <div v-if="o.alias_cbu || o.cbu" class="truncate">
-                        <dt class="text-muted-foreground text-xs">Para transferirle</dt>
+                        <dt class="text-muted-foreground text-xs">
+                            Para transferirle
+                        </dt>
                         <dd class="font-mono text-xs">
                             {{ o.alias_cbu || o.cbu }}
                         </dd>
@@ -107,7 +113,10 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         {{ o.propiedades }}
                         {{ o.propiedades === 1 ? 'propiedad' : 'propiedades' }}
                     </span>
-                    <span v-if="o.tiene_acceso" class="text-emerald-600 dark:text-emerald-400">
+                    <span
+                        v-if="o.tiene_acceso"
+                        class="text-emerald-600 dark:text-emerald-400"
+                    >
                         · entra a la app
                     </span>
                 </div>

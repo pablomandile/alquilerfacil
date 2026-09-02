@@ -39,7 +39,9 @@ const props = defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Liquidaciones', href: rutasLiquidaciones.index() }],
+        breadcrumbs: [
+            { title: 'Liquidaciones', href: rutasLiquidaciones.index() },
+        ],
     },
 });
 
@@ -100,7 +102,9 @@ function cambiarPeriodo() {
                         class="text-muted-foreground"
                     >
                         Gastos
-                        <span class="ml-1 tabular-nums text-rose-600 dark:text-rose-400">
+                        <span
+                            class="ml-1 text-rose-600 tabular-nums dark:text-rose-400"
+                        >
                             −{{ pesos(p.gastos_total) }}
                         </span>
                     </span>
@@ -155,7 +159,9 @@ function cambiarPeriodo() {
                         >
                             <div class="min-w-0">
                                 <p class="truncate">{{ g.descripcion }}</p>
-                                <p class="text-muted-foreground truncate text-xs">
+                                <p
+                                    class="text-muted-foreground truncate text-xs"
+                                >
                                     {{ g.propiedad }} · {{ g.porcentaje }}%
                                 </p>
                             </div>

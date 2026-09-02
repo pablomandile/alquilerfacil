@@ -76,10 +76,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                             {{ p.direccion }}
                         </p>
                     </div>
-                    <EstadoBadge
-                        :estado="p.estado"
-                        :label="p.estado_label"
-                    />
+                    <EstadoBadge :estado="p.estado" :label="p.estado_label" />
                 </div>
 
                 <dl class="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -98,9 +95,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         <dd class="truncate">
                             {{
                                 p.propietarios
-                                    .map(
-                                        (o) => `${o.nombre} ${o.porcentaje}%`,
-                                    )
+                                    .map((o) => `${o.nombre} ${o.porcentaje}%`)
                                     .join(' · ') || '—'
                             }}
                         </dd>
@@ -165,7 +160,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         </td>
                         <td class="px-4 py-2">{{ p.inquilino ?? '—' }}</td>
                         <td
-                            class="px-4 py-2 text-right tabular-nums whitespace-nowrap"
+                            class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                         >
                             {{ p.monto_actual ? pesos(p.monto_actual) : '—' }}
                         </td>

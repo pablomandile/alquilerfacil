@@ -107,7 +107,8 @@ function repartirEnPartesIguales() {
 
     const parte = Math.floor((100 / n) * 100) / 100;
     form.propietarios.forEach((p, i) => {
-        p.porcentaje = i === 0 ? Number((100 - parte * (n - 1)).toFixed(2)) : parte;
+        p.porcentaje =
+            i === 0 ? Number((100 - parte * (n - 1)).toFixed(2)) : parte;
     });
 }
 
