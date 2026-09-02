@@ -40,6 +40,10 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                // El front usa esto para esconder los botones de edición cuando
+                // entra un propietario. La restricción real vive en el middleware
+                // `admin`; esto es sólo para no ofrecer lo que va a dar 403.
+                'esAdmin' => (bool) $request->user()?->esAdmin(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

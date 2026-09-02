@@ -1,7 +1,10 @@
+export type RolUsuario = 'admin' | 'propietario';
+
 export type User = {
     id: number;
     name: string;
     email: string;
+    rol: RolUsuario;
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
@@ -12,6 +15,11 @@ export type User = {
 
 export type Auth = {
     user: User;
+    /**
+     * Sirve para no mostrar botones que igual van a dar 403. La restricción de
+     * verdad está en el middleware `admin`, no acá.
+     */
+    esAdmin: boolean;
 };
 
 export type Passkey = {
