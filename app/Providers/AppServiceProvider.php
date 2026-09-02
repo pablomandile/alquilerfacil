@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\Indices\BcraIclSource;
+use App\Services\Indices\IndecIpcSource;
+use App\Services\Indices\SincronizadorDeIndices;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +18,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Las fuentes se listan acá para que agregar un índice nuevo sea sumar una
+        // clase y una línea, sin tocar el sincronizador ni el comando.
+        $this->app->singleton(SincronizadorDeIndices::class, fn ($app) => new SincronizadorDeIndices([
+            $app->make(IndecIpcSource::class),
+            $app->make(BcraIclSource::class),
+        ]));
     }
 
     /**
