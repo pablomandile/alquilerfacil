@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import GoogleButton from '@/components/GoogleButton.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -16,7 +17,7 @@ defineProps<{
 
 defineOptions({
     layout: {
-        title: 'Create an account',
+        title: 'Creá tu cuenta',
         description: 'Completá tus datos para crear la cuenta',
     },
 });
@@ -97,8 +98,19 @@ defineOptions({
                 data-test="register-user-button"
             >
                 <Spinner v-if="processing" />
-                Create account
+                Crear cuenta
             </Button>
+
+            <div
+                class="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
+            >
+                <span
+                    class="bg-background text-muted-foreground relative z-10 px-2"
+                    >o</span
+                >
+            </div>
+
+            <GoogleButton :tabindex="6" />
         </div>
 
         <div class="text-muted-foreground text-center text-sm">
@@ -106,7 +118,7 @@ defineOptions({
             <TextLink
                 :href="login()"
                 class="underline underline-offset-4"
-                :tabindex="6"
+                :tabindex="7"
                 >Iniciar sesión</TextLink
             >
         </div>

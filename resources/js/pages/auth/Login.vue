@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import GoogleButton from '@/components/GoogleButton.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -24,6 +26,11 @@ defineProps<{
     status?: string;
     canResetPassword: boolean;
 }>();
+
+// Errores del login con Google: vuelven como redirect con withErrors(), así que
+// están en las props de la página y no en el submit del formulario.
+const page = usePage();
+const oauthError = computed(() => page.props.errors?.oauth);
 </script>
 
 <template>
@@ -34,6 +41,13 @@ defineProps<{
         class="mb-4 text-center text-sm font-medium text-green-600"
     >
         {{ status }}
+    </div>
+
+    <div
+        v-if="oauthError"
+        class="text-destructive mb-4 text-center text-sm font-medium"
+    >
+        {{ oauthError }}
     </div>
 
     <PasskeyVerify />
@@ -100,11 +114,22 @@ defineProps<{
                 <Spinner v-if="processing" />
                 Iniciar sesión
             </Button>
+
+            <div
+                class="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
+            >
+                <span
+                    class="bg-background text-muted-foreground relative z-10 px-2"
+                    >o</span
+                >
+            </div>
+
+            <GoogleButton :tabindex="6" />
         </div>
 
         <div class="text-muted-foreground text-center text-sm">
             ¿No tenés cuenta?
-            <TextLink :href="register()" :tabindex="5">Crear cuenta</TextLink>
+            <TextLink :href="register()" :tabindex="7">Crear cuenta</TextLink>
         </div>
     </Form>
 </template>

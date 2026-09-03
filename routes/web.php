@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
@@ -20,6 +21,15 @@ use Illuminate\Support\Facades\Route;
  */
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))
     ->name('home');
+
+/*
+ * Login con Google (OAuth2). Fuera del grupo 'auth' porque son justamente las
+ * rutas para entrar. El usuario se busca o se crea en el callback.
+ */
+Route::controller(GoogleController::class)->group(function () {
+    Route::get('auth/google/redirect', 'redirect')->name('google.redirect');
+    Route::get('auth/google/callback', 'callback')->name('google.callback');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
