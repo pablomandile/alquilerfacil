@@ -19,7 +19,7 @@ const acentos = {
 
 <template>
     <div
-        class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+        class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
     >
         <div class="flex items-start justify-between gap-2">
             <p class="text-muted-foreground text-sm">{{ etiqueta }}</p>

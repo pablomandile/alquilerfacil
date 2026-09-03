@@ -85,7 +85,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
         <div class="grid gap-4 lg:grid-cols-3">
             <!-- Ficha -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
             >
                 <h2 class="text-sm font-medium">Ficha</h2>
                 <dl class="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -124,7 +124,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 
             <!-- Dueños -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4 lg:col-span-2"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4 lg:col-span-2"
             >
                 <h2 class="text-sm font-medium">Propietarios</h2>
 
@@ -165,7 +165,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 
             <div
                 v-if="propiedad.contratos.length"
-                class="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
             >
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">
@@ -226,7 +226,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
             <h2 class="text-sm font-medium">Últimos gastos</h2>
 
             <div
-                class="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
             >
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">

@@ -112,7 +112,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
         <div class="grid gap-4 lg:grid-cols-3">
             <!-- Condiciones -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
             >
                 <h2 class="text-sm font-medium">Condiciones</h2>
                 <dl class="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -156,7 +156,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 
             <!-- Inquilino -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
             >
                 <h2 class="text-sm font-medium">Inquilino</h2>
                 <dl class="mt-3 space-y-2 text-sm">
@@ -186,7 +186,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 
             <!-- Próximo ajuste: se calcula al vuelo -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
             >
                 <h2 class="text-sm font-medium">Próximo ajuste</h2>
 
@@ -238,7 +238,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
         <section v-if="contrato.ajustes.length" class="space-y-3">
             <h2 class="text-sm font-medium">Historial de ajustes</h2>
             <div
-                class="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
             >
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">
@@ -294,7 +294,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
         <section v-if="contrato.cargos.length" class="space-y-3">
             <h2 class="text-sm font-medium">Cargos emitidos</h2>
             <div
-                class="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
             >
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">

@@ -58,7 +58,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
             <article
                 v-for="i in inquilinos"
                 :key="i.id"
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
             >
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">

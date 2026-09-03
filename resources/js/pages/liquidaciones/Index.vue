@@ -84,7 +84,7 @@ function cambiarPeriodo() {
         <article
             v-for="p in propietarios"
             :key="p.id"
-            class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border"
+            class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border"
         >
             <header
                 class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"

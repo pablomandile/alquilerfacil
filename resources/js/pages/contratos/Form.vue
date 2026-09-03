@@ -88,7 +88,7 @@ function enviar() {
 
         <form class="grid max-w-3xl gap-6" @submit.prevent="enviar">
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2">
                     <Label for="property_id">Propiedad</Label>
@@ -156,7 +156,7 @@ function enviar() {
 
             <!-- Plata -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <h2 class="text-sm font-medium sm:col-span-2">Valores</h2>
 
@@ -218,7 +218,7 @@ function enviar() {
 
             <!-- Actualización -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="sm:col-span-2">
                     <h2 class="text-sm font-medium">Actualización</h2>

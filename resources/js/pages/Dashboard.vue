@@ -111,7 +111,7 @@ defineProps<{
         <div class="grid gap-4 lg:grid-cols-2">
             <!-- Ajustes que ya están en fecha -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border"
             >
                 <header
                     class="flex items-center justify-between border-b px-4 py-3"
@@ -149,7 +149,7 @@ defineProps<{
 
             <!-- Gastos impagos -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border"
             >
                 <header
                     class="flex items-center justify-between border-b px-4 py-3"
@@ -212,7 +212,7 @@ defineProps<{
                 :icono="Receipt"
             />
             <div
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
             >
                 <p class="text-muted-foreground text-sm">Último índice</p>
                 <ul class="mt-2 space-y-1.5">

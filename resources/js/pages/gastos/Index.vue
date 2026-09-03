@@ -135,7 +135,7 @@ const total = computed(() =>
             <article
                 v-for="g in gastos"
                 :key="g.id"
-                class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
             >
                 <div
                     class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"

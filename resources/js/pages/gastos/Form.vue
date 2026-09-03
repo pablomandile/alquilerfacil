@@ -92,7 +92,7 @@ function enviar() {
 
         <form class="grid max-w-2xl gap-6" @submit.prevent="enviar">
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2 sm:col-span-2">
                     <Label for="property_id">Propiedad</Label>
@@ -159,7 +159,7 @@ function enviar() {
             </section>
 
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2">
                     <Label for="monto">Monto</Label>
@@ -243,7 +243,7 @@ function enviar() {
             </section>
 
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
             >
                 <div class="flex items-center gap-2">
                     <Checkbox id="pagado" v-model="form.pagado" />

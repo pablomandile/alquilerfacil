@@ -135,6 +135,14 @@
         hsl(213 68% 85%) 45%,
         hsl(218 62% 76%) 100%
     );
+
+    /* Superficie de las tarjetas: casi blanca con un tinte azul apenas visible,
+       para que se despeguen del panel sin competir con el contenido. */
+    --gradient-card: linear-gradient(
+        160deg,
+        hsl(0 0% 100%) 0%,
+        hsl(214 52% 97.5%) 100%
+    );
 }
 
 .dark {
@@ -178,6 +186,12 @@
         hsl(217 52% 11%) 48%,
         hsl(222 50% 6%) 100%
     );
+
+    --gradient-card: linear-gradient(
+        160deg,
+        hsl(215 36% 14%) 0%,
+        hsl(219 36% 10%) 100%
+    );
 }
 
 @layer base {
@@ -192,4 +206,8 @@
         background-repeat: no-repeat;
         background-size: cover;
     }
+}
+
+@utility tarjeta {
+    background-image: var(--gradient-card);
 }

@@ -67,7 +67,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                 v-for="p in propiedades"
                 :key="p.id"
                 :href="rutasPropiedades.show(p.id)"
-                class="border-sidebar-border/70 dark:border-sidebar-border hover:bg-accent/50 rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta hover:border-ring rounded-xl border p-4"
             >
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
@@ -106,7 +106,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 
         <div
             v-if="propiedades.length"
-            class="border-sidebar-border/70 dark:border-sidebar-border hidden overflow-x-auto rounded-xl border md:block"
+            class="border-sidebar-border/70 dark:border-sidebar-border tarjeta hidden overflow-x-auto rounded-xl border md:block"
         >
             <table class="w-full text-sm">
                 <thead class="text-muted-foreground border-b text-left">

@@ -181,7 +181,7 @@ function recalcular() {
                 <article
                     v-for="ajuste in propuestos"
                     :key="ajuste.id"
-                    class="border-sidebar-border/70 dark:border-sidebar-border rounded-xl border p-4"
+                    class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
                 >
                     <div
                         class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
@@ -242,7 +242,7 @@ function recalcular() {
             <h2 class="text-sm font-medium">Historial</h2>
 
             <div
-                class="border-sidebar-border/70 dark:border-sidebar-border overflow-x-auto rounded-xl border"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
             >
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">

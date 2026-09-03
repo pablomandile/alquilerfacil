@@ -133,7 +133,7 @@ function enviar() {
         <form class="grid max-w-3xl gap-6" @submit.prevent="enviar">
             <!-- Identificación -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
             >
                 <div class="grid gap-2">
                     <Label for="alias">Nombre</Label>
@@ -190,7 +190,7 @@ function enviar() {
 
             <!-- Dirección -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
             >
                 <h2 class="text-sm font-medium">Dirección</h2>
 
@@ -271,7 +271,7 @@ function enviar() {
 
             <!-- Propietarios y porcentajes -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border grid gap-4 rounded-xl border p-4"
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
             >
                 <div class="flex items-center justify-between gap-2">
                     <div>
