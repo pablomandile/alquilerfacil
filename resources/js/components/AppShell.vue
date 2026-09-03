@@ -18,7 +18,13 @@ const isOpen = usePage().props.sidebarOpen;
     <div v-if="variant === 'header'" class="flex min-h-screen w-full flex-col">
         <slot />
     </div>
-    <SidebarProvider v-else :default-open="isOpen">
+    <!-- bg-transparent: el marco de la variante "inset" deja ver el degradado
+         azul del body en vez de taparlo con un color plano. -->
+    <SidebarProvider
+        v-else
+        :default-open="isOpen"
+        class="has-data-[variant=inset]:bg-transparent"
+    >
         <slot />
     </SidebarProvider>
 </template>

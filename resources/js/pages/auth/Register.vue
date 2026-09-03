@@ -101,13 +101,10 @@ defineOptions({
                 Crear cuenta
             </Button>
 
-            <div
-                class="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
-            >
-                <span
-                    class="bg-background text-muted-foreground relative z-10 px-2"
-                    >o</span
-                >
+            <div class="flex items-center gap-3 text-sm">
+                <span class="bg-border h-px flex-1"></span>
+                <span class="text-muted-foreground">o</span>
+                <span class="bg-border h-px flex-1"></span>
             </div>
 
             <GoogleButton :tabindex="6" />

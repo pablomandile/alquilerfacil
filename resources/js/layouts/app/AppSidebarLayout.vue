@@ -18,7 +18,12 @@ withDefaults(defineProps<Props>(), {
 <template>
     <AppShell variant="sidebar">
         <AppSidebar />
-        <AppContent variant="sidebar" class="min-w-0 overflow-x-clip">
+        <!-- Panel traslúcido: deja pasar el degradado azul del fondo, sin
+             perder legibilidad porque el contenido va sobre fichas opacas. -->
+        <AppContent
+            variant="sidebar"
+            class="bg-background/50 dark:bg-background/70 min-w-0 overflow-x-clip"
+        >
             <AppSidebarHeader :breadcrumbs="breadcrumbs" />
             <slot />
         </AppContent>

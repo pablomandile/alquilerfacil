@@ -19,14 +19,16 @@
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- Color de fondo inmediato (antes de que cargue app.css) para que no
+             haya un flash blanco antes del degradado azul. Es el tono medio del
+             degradado definido en resources/css/app.css. --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                background-color: #bfd6f3;
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: #0d192b;
             }
         </style>
 

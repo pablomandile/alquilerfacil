@@ -59,15 +59,15 @@ const { verify, isLoading, error, isSupported } = usePasskeyVerify({
             </div>
         </div>
 
-        <div class="relative my-6">
-            <div class="absolute inset-0 flex items-center">
-                <Separator class="w-full" />
-            </div>
-            <div class="relative flex justify-center text-xs uppercase">
-                <span class="bg-background text-muted-foreground px-2">
-                    {{ props.separator ?? 'O entrá con tu email' }}
-                </span>
-            </div>
+        <!-- La línea se corta a los lados del texto en vez de taparse con un
+             recuadro opaco: así el separador no depende del color de fondo, que
+             acá es el degradado azul. -->
+        <div class="my-6 flex items-center gap-3 text-xs uppercase">
+            <Separator class="w-auto flex-1" />
+            <span class="text-muted-foreground">
+                {{ props.separator ?? 'O entrá con tu email' }}
+            </span>
+            <Separator class="w-auto flex-1" />
         </div>
     </div>
 </template>
