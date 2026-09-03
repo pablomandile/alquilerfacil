@@ -34,7 +34,13 @@ class OwnerController extends Controller
                 'cbu' => $o->cbu,
                 'alias_cbu' => $o->alias_cbu,
                 'propiedades' => $o->properties_count,
-                'tiene_acceso' => $o->tieneAcceso(),
+                // con_cuenta: ya entra a la app · pendiente: hay email pero
+                // todavía no ingresó · sin_email: no se le puede dar acceso.
+                'vinculo' => match (true) {
+                    $o->tieneAcceso() => 'con_cuenta',
+                    $o->email !== null => 'pendiente',
+                    default => 'sin_email',
+                },
             ]);
 
         return Inertia::render('propietarios/Index', [
@@ -63,6 +69,7 @@ class OwnerController extends Controller
             'propietario' => [
                 ...$owner->only(['id', 'nombre', 'documento', 'email', 'telefono', 'cbu', 'alias_cbu', 'notas']),
                 'tipo_documento' => $owner->tipo_documento?->value,
+                'tiene_acceso' => $owner->tieneAcceso(),
             ],
         ]);
     }

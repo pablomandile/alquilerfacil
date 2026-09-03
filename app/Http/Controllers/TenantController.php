@@ -16,14 +16,9 @@ class TenantController extends Controller
 {
     public function index(Request $request): Response
     {
-        $usuario = $request->user();
-
         $inquilinos = Tenant::query()
             // Un propietario ve sólo a los inquilinos de sus propiedades.
-            ->when(! $usuario->esAdmin(), fn ($q) => $q->whereIn(
-                'id',
-                Contract::query()->visiblePara($usuario)->select('tenant_id')
-            ))
+            ->visiblePara($request->user())
             ->with(['contracts.property:id,alias'])
             ->orderBy('nombre')
             ->get()
@@ -44,6 +39,8 @@ class TenantController extends Controller
 
     public function create(): Response
     {
+        $this->authorize('create', Tenant::class);
+
         return Inertia::render('inquilinos/Form', [
             'tiposDocumento' => Opciones::de(TipoDocumento::class),
         ]);
@@ -51,6 +48,8 @@ class TenantController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Tenant::class);
+
         Tenant::query()->create($this->validado($request));
 
         return to_route('inquilinos.index')->with('success', 'Inquilino creado.');
@@ -58,6 +57,8 @@ class TenantController extends Controller
 
     public function edit(Tenant $tenant): Response
     {
+        $this->authorize('update', $tenant);
+
         return Inertia::render('inquilinos/Form', [
             'tiposDocumento' => Opciones::de(TipoDocumento::class),
             'inquilino' => [
@@ -69,6 +70,8 @@ class TenantController extends Controller
 
     public function update(Request $request, Tenant $tenant): RedirectResponse
     {
+        $this->authorize('update', $tenant);
+
         $tenant->update($this->validado($request));
 
         return to_route('inquilinos.index')->with('success', 'Inquilino actualizado.');
@@ -76,6 +79,8 @@ class TenantController extends Controller
 
     public function destroy(Tenant $tenant): RedirectResponse
     {
+        $this->authorize('delete', $tenant);
+
         if ($tenant->contracts()->exists()) {
             return back()->with('error', 'No se puede borrar: el inquilino tiene contratos cargados.');
         }

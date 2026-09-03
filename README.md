@@ -21,8 +21,8 @@ npm run dev
 ```
 
 El seeder deja un administrador (`pablo.mandile@gmail.com` / `password`), una
-propietaria con acceso de sólo lectura (`laura@example.com` / `password`) y tres
-propiedades con contratos, gastos y cobranzas.
+copropietaria que co-administra dos de las propiedades (`laura@example.com` /
+`password`) y tres propiedades con contratos, gastos y cobranzas.
 
 ## Cómo se actualiza el alquiler
 
@@ -91,14 +91,27 @@ de mayor porcentaje, con desempate por `owner_id` para que sea determinístico.
 
 ## Roles
 
-|                        | Administrador | Propietario          |
-| ---------------------- | ------------- | -------------------- |
-| Ver                    | todo          | sólo sus propiedades |
-| Crear, editar, borrar  | sí            | no                   |
-| Ver a los otros dueños | sí            | no                   |
+|                                           | Administrador | Propietario          |
+| ----------------------------------------- | ------------- | -------------------- |
+| Ver                                       | todo          | sólo sus propiedades |
+| Gastos, pagos, contratos, aplicar ajustes | sí            | sí, sobre lo suyo    |
+| Alta/baja de propiedades, dueños y %      | sí            | no                   |
+| Índices, recálculo global de ajustes      | sí            | no                   |
+| Ver a los otros dueños                    | sí            | no                   |
 
-Las rutas de escritura pasan por el middleware `admin`. Las de lectura filtran con
-el scope `Property::visiblePara()`, y pedir algo ajeno devuelve **404 y no 403**,
+Un propietario **co-administra** las propiedades donde figura como dueño: sobre
+ellas hace casi todo lo que hace el admin. La estructura (qué propiedades hay,
+quién es dueño y con qué porcentaje) y lo global (índices) son sólo del admin.
+
+Cómo entra un copropietario: se carga su ficha con su email y, cuando ingresa
+—con contraseña o con Google—, se vincula sola su cuenta con la ficha (hook en
+`Owner` + listener `VincularOwnerAlIngresar`). A partir de ahí ve su propiedad y
+la co-administra.
+
+La estructura pasa por el middleware `admin`; el resto de la escritura la
+autorizan las policies (`ExpensePolicy`, `ContractPolicy`, …) contra
+`User::puedeGestionar($property)`. Las de lectura filtran con el scope
+`Property::visiblePara()`, y pedir algo ajeno devuelve **404 y no 403**,
 para no confirmar que exista.
 
 ## Comandos
@@ -114,13 +127,14 @@ Los tres son idempotentes: volver a correrlos no duplica nada.
 ## Tests
 
 ```bash
-php artisan test          # 79 tests
+php artisan test          # 92 tests
 npm run check             # formato y lint
 ```
 
 Los que importan: `CalculadorDeAjusteTest` (incluye el desfasaje de publicación),
 `RepartoEntreDuenosTest` (las partes suman el total exacto), `AccesoDeDuenoTest`
-(un propietario no ve ni toca lo ajeno) y `CobranzasTest` (pagos parciales).
+(un propietario co-administra lo suyo y no toca lo ajeno; el vínculo por email) y
+`CobranzasTest` (pagos parciales).
 
 Las APIs externas se testean con `Http::fake()`; los tests no pegan a INDEC ni al
 BCRA.

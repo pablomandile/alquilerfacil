@@ -63,15 +63,19 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
-                // El front usa esto para esconder los botones de edición cuando
-                // entra un propietario. La restricción real vive en el middleware
-                // `admin`; esto es sólo para no ofrecer lo que va a dar 403.
-                'esAdmin' => (bool) $request->user()?->esAdmin(),
+                'user' => $user,
+                // Para esconder botones que igual darían 403. La restricción de
+                // verdad la hacen el middleware `admin` y las policies.
+                'esAdmin' => (bool) $user?->esAdmin(),
+                'esPropietario' => (bool) $user?->esPropietario(),
+                // ¿Gestiona al menos una propiedad? (gatea los botones "Nuevo…").
+                'puedeGestionar' => (bool) $user?->gestionaAlgunaPropiedad(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

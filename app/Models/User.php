@@ -74,4 +74,21 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->rol === RolUsuario::Propietario;
     }
+
+    /**
+     * ¿Puede gestionar (cargar gastos, pagos, contratos…) esta propiedad? El
+     * admin, siempre; un propietario, sólo si figura como dueño.
+     */
+    public function puedeGestionar(Property $property): bool
+    {
+        return $this->esAdmin()
+            || $property->owners()->where('owners.user_id', $this->id)->exists();
+    }
+
+    /** ¿Tiene al menos una propiedad para gestionar? (para los botones "Nuevo…"). */
+    public function gestionaAlgunaPropiedad(): bool
+    {
+        return $this->esAdmin()
+            || Property::query()->visiblePara($this)->exists();
+    }
 }

@@ -74,7 +74,7 @@ defineOptions({
 });
 
 const page = usePage();
-const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
+const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 </script>
 
 <template>
@@ -95,7 +95,12 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         Ver propiedad
                     </Link>
                 </Button>
-                <Button v-if="esAdmin" as-child size="sm" variant="outline">
+                <Button
+                    v-if="puedeGestionar"
+                    as-child
+                    size="sm"
+                    variant="outline"
+                >
                     <Link :href="rutasContratos.edit(contrato.id)">
                         <Pencil class="size-4" />
                         Editar
@@ -198,7 +203,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         {{ proyeccion.ventana }}
                     </p>
                     <Button
-                        v-if="esAdmin"
+                        v-if="puedeGestionar"
                         as-child
                         size="sm"
                         class="mt-3"

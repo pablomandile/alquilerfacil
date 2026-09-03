@@ -26,7 +26,7 @@ defineOptions({
 });
 
 const page = usePage();
-const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
+const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 </script>
 
 <template>
@@ -35,7 +35,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
     <div class="flex flex-1 flex-col gap-6 p-4">
         <PageHeader titulo="Inquilinos">
             <template #acciones>
-                <Button v-if="esAdmin" as-child size="sm">
+                <Button v-if="puedeGestionar" as-child size="sm">
                     <Link :href="rutasInquilinos.create()">
                         <Plus class="size-4" />
                         Nuevo inquilino
@@ -49,7 +49,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
             titulo="No hay inquilinos cargados"
             :icono="UserSquare"
         >
-            <Button v-if="esAdmin" as-child size="sm">
+            <Button v-if="puedeGestionar" as-child size="sm">
                 <Link :href="rutasInquilinos.create()">Cargar el primero</Link>
             </Button>
         </EmptyState>
@@ -68,7 +68,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         </p>
                     </div>
                     <Button
-                        v-if="esAdmin"
+                        v-if="puedeGestionar"
                         as-child
                         size="icon"
                         variant="ghost"

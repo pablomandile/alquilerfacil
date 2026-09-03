@@ -6,7 +6,9 @@ use App\Models\Contract;
 use App\Models\Expense;
 use App\Models\Owner;
 use App\Models\Property;
+use App\Models\RentCharge;
 use App\Models\User;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -41,6 +43,8 @@ class AccesoDeDuenoTest extends TestCase
         );
     }
 
+    // ── Lectura ──────────────────────────────────────────────────────────
+
     public function test_el_dueno_ve_solo_sus_propiedades_en_el_listado(): void
     {
         $this->actingAs($this->duenio)
@@ -74,30 +78,6 @@ class AccesoDeDuenoTest extends TestCase
         $this->actingAs($this->duenio)
             ->get(route('propiedades.show', $this->suya))
             ->assertOk();
-    }
-
-    public function test_el_dueno_no_puede_crear_ni_editar_nada(): void
-    {
-        $rutas = [
-            ['get', route('propiedades.create')],
-            ['post', route('propiedades.store')],
-            ['get', route('propiedades.edit', $this->suya)],
-            ['put', route('propiedades.update', $this->suya)],
-            ['delete', route('propiedades.destroy', $this->suya)],
-            ['get', route('contratos.create')],
-            ['get', route('gastos.create')],
-            ['get', route('inquilinos.create')],
-            ['get', route('propietarios.create')],
-            ['post', route('indices.sincronizar')],
-            ['post', route('cobranzas.generar')],
-            ['post', route('ajustes.recalcular')],
-        ];
-
-        foreach ($rutas as [$metodo, $url]) {
-            $this->actingAs($this->duenio)
-                ->{$metodo}($url)
-                ->assertForbidden("Se esperaba 403 en {$metodo} {$url}");
-        }
     }
 
     public function test_el_dueno_solo_ve_los_contratos_y_gastos_de_lo_suyo(): void
@@ -146,12 +126,136 @@ class AccesoDeDuenoTest extends TestCase
             }
         }
 
-        // Los índices son sólo para el admin.
         $this->actingAs($this->admin)->get(route('indices.index'))->assertOk();
     }
 
     public function test_un_visitante_sin_sesion_va_al_login(): void
     {
         $this->get(route('propiedades.index'))->assertRedirect(route('login'));
+    }
+
+    // ── Escritura ────────────────────────────────────────────────────────
+
+    /** La estructura (alta/baja de propiedades, dueños, índices) es del admin. */
+    public function test_el_copropietario_no_toca_la_estructura(): void
+    {
+        $rutas = [
+            ['get', route('propiedades.create')],
+            ['post', route('propiedades.store')],
+            ['get', route('propiedades.edit', $this->suya)],
+            ['put', route('propiedades.update', $this->suya)],
+            ['delete', route('propiedades.destroy', $this->suya)],
+            ['get', route('propietarios.create')],
+            ['post', route('indices.sincronizar')],
+            ['post', route('ajustes.recalcular')],
+        ];
+
+        foreach ($rutas as [$metodo, $url]) {
+            $this->actingAs($this->duenio)
+                ->{$metodo}($url)
+                ->assertForbidden("Se esperaba 403 en {$metodo} {$url}");
+        }
+    }
+
+    /** Sobre su propiedad, el copropietario gestiona como el admin. */
+    public function test_el_copropietario_gestiona_lo_de_su_propiedad(): void
+    {
+        $this->actingAs($this->duenio);
+
+        $this->get(route('gastos.create'))->assertOk();
+        $this->get(route('contratos.create'))->assertOk();
+        $this->get(route('inquilinos.create'))->assertOk();
+        $this->post(route('cobranzas.generar'))->assertRedirect();
+
+        $gasto = Expense::factory()->create(['property_id' => $this->suya->id]);
+        $this->get(route('gastos.index'))->assertOk();
+        $this->delete(route('gastos.destroy', $gasto))->assertRedirect();
+        $this->assertModelMissing($gasto);
+    }
+
+    public function test_el_copropietario_no_toca_lo_ajeno(): void
+    {
+        $gastoAjeno = Expense::factory()->create(['property_id' => $this->ajena->id]);
+        $contratoAjeno = Contract::factory()->create(['property_id' => $this->ajena->id]);
+        $cargoAjeno = RentCharge::factory()->create(['contract_id' => $contratoAjeno->id]);
+
+        $this->actingAs($this->duenio);
+
+        // Cargar un gasto apuntando a la propiedad ajena.
+        $this->post(route('gastos.store'), $this->gastoValido($this->ajena))
+            ->assertForbidden();
+
+        // Editar / borrar registros de la propiedad ajena (ruta model-bound).
+        $this->put(route('gastos.update', $gastoAjeno), $this->gastoValido($this->ajena))
+            ->assertForbidden();
+        $this->delete(route('gastos.destroy', $gastoAjeno))->assertForbidden();
+        $this->get(route('contratos.edit', $contratoAjeno))->assertForbidden();
+        $this->post(route('pagos.store', $cargoAjeno), [])->assertForbidden();
+    }
+
+    public function test_el_copropietario_carga_un_gasto_extraordinario_y_se_reparte(): void
+    {
+        $this->actingAs($this->duenio)
+            ->post(route('gastos.store'), $this->gastoValido($this->suya, extraordinario: true))
+            ->assertRedirect(route('gastos.index'));
+
+        $gasto = Expense::query()->where('property_id', $this->suya->id)->sole();
+
+        // Un solo dueño al 100 % → su parte es el total.
+        $this->assertSame(1, $gasto->shares()->count());
+        $this->assertSame((string) $gasto->monto, (string) $gasto->shares()->sole()->monto);
+    }
+
+    // ── Vínculo de la cuenta ─────────────────────────────────────────────
+
+    public function test_guardar_un_owner_con_email_de_una_cuenta_lo_vincula(): void
+    {
+        $user = User::factory()->create(['email' => 'hermana@gmail.com']);
+
+        $owner = Owner::factory()->create(['email' => 'hermana@gmail.com']);
+
+        $this->assertSame($user->id, $owner->fresh()->user_id);
+        $this->assertTrue($owner->tieneAcceso());
+    }
+
+    public function test_al_ingresar_se_vincula_la_ficha_de_propietario_por_email(): void
+    {
+        $owner = Owner::factory()->create([
+            'email' => 'hermana@gmail.com',
+            'user_id' => null,
+        ]);
+
+        $propiedad = Property::factory()->create(['alias' => 'De la hermana']);
+        $propiedad->owners()->attach($owner->id, ['porcentaje' => 100]);
+
+        $user = User::factory()->create(['email' => 'hermana@gmail.com']);
+        $this->assertNull($owner->fresh()->user_id);
+
+        event(new Login('web', $user, false));
+
+        $this->assertSame($user->id, $owner->fresh()->user_id);
+
+        $this->actingAs($user)
+            ->get(route('propiedades.index'))
+            ->assertInertia(fn ($page) => $page
+                ->has('propiedades', 1)
+                ->where('propiedades.0.alias', 'De la hermana')
+            );
+    }
+
+    /** @return array<string, mixed> */
+    private function gastoValido(Property $property, bool $extraordinario = false): array
+    {
+        return [
+            'property_id' => $property->id,
+            'tipo' => $extraordinario ? 'extraordinario' : 'servicio',
+            'categoria' => $extraordinario ? 'reparacion' : 'luz',
+            'descripcion' => 'Gasto de prueba',
+            'periodo' => today()->toDateString(),
+            'monto' => 50000,
+            'vencimiento' => today()->addDays(10)->toDateString(),
+            'a_cargo_de' => $extraordinario ? 'propietarios' : 'inquilino',
+            'pagado' => false,
+        ];
     }
 }

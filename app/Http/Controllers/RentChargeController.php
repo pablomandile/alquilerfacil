@@ -69,6 +69,8 @@ class RentChargeController extends Controller
 
     public function generar(Request $request, GeneradorDeCargos $generador): RedirectResponse
     {
+        $this->authorize('generar', RentCharge::class);
+
         $datos = $request->validate([
             'periodo' => ['nullable', 'date_format:Y-m'],
         ]);
@@ -77,7 +79,7 @@ class RentChargeController extends Controller
             ? Date::parse($datos['periodo'].'-01')
             : today();
 
-        $resultados = $generador->generar($periodo);
+        $resultados = $generador->generar($periodo, $request->user());
         $nuevos = $resultados->filter(fn ($r) => $r->nuevo)->count();
         $fallidos = $resultados->reject(fn ($r) => $r->exitoso());
 

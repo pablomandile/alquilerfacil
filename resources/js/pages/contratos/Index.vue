@@ -34,7 +34,7 @@ defineOptions({
 });
 
 const page = usePage();
-const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
+const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 </script>
 
 <template>
@@ -43,7 +43,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
     <div class="flex flex-1 flex-col gap-6 p-4">
         <PageHeader titulo="Contratos">
             <template #acciones>
-                <Button v-if="esAdmin" as-child size="sm">
+                <Button v-if="puedeGestionar" as-child size="sm">
                     <Link :href="rutasContratos.create()">
                         <Plus class="size-4" />
                         Nuevo contrato
@@ -58,7 +58,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
             descripcion="Un contrato une una propiedad con un inquilino y define cómo se actualiza el alquiler."
             :icono="FileText"
         >
-            <Button v-if="esAdmin" as-child size="sm">
+            <Button v-if="puedeGestionar" as-child size="sm">
                 <Link :href="rutasContratos.create()">Cargar el primero</Link>
             </Button>
         </EmptyState>

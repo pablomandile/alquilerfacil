@@ -75,6 +75,8 @@ class RentAdjustmentController extends Controller
 
     public function aplicar(Request $request, RentAdjustment $adjustment, AplicadorDeAjuste $aplicador): RedirectResponse
     {
+        $this->authorize('resolver', $adjustment);
+
         if (! $adjustment->estaPropuesto()) {
             return back()->with('error', 'Ese ajuste ya fue resuelto.');
         }
@@ -94,6 +96,8 @@ class RentAdjustmentController extends Controller
 
     public function rechazar(Request $request, RentAdjustment $adjustment, AplicadorDeAjuste $aplicador): RedirectResponse
     {
+        $this->authorize('resolver', $adjustment);
+
         if (! $adjustment->estaPropuesto()) {
             return back()->with('error', 'Ese ajuste ya fue resuelto.');
         }

@@ -6,6 +6,7 @@ use App\Enums\TipoDocumento;
 use Carbon\CarbonInterface;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -40,5 +41,23 @@ class Tenant extends Model
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
+    }
+
+    /**
+     * @see Property::scopeVisiblePara()
+     *
+     * @param  Builder<Tenant>  $query
+     * @return Builder<Tenant>
+     */
+    public function scopeVisiblePara(Builder $query, User $user): Builder
+    {
+        if ($user->esAdmin()) {
+            return $query;
+        }
+
+        return $query->whereIn(
+            'id',
+            Contract::query()->visiblePara($user)->select('tenant_id')
+        );
     }
 }

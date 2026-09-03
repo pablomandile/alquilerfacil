@@ -5,6 +5,7 @@ namespace App\Services\Cobranzas;
 use App\Exceptions\RepartoInvalidoException;
 use App\Models\Contract;
 use App\Models\RentCharge;
+use App\Models\User;
 use App\Services\Repartos\RepartidorEntreDuenos;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -21,14 +22,21 @@ class GeneradorDeCargos
     public function __construct(private readonly RepartidorEntreDuenos $repartidor) {}
 
     /**
+     * Emite el cargo del período para cada contrato vigente. Si se pasa un
+     * usuario que no es admin, se limita a los contratos de sus propiedades.
+     *
      * @return Collection<int, ResultadoDeGeneracion>
      */
-    public function generar(?CarbonInterface $periodo = null): Collection
+    public function generar(?CarbonInterface $periodo = null, ?User $user = null): Collection
     {
         $periodo = ($periodo ?? today())->copy()->startOfMonth();
 
         return Contract::query()
             ->activos()
+            ->when(
+                $user !== null && ! $user->esAdmin(),
+                fn ($q) => $q->visiblePara($user)
+            )
             // Un contrato que arranca el mes que viene o que ya terminó no genera
             // cargo en este período.
             ->whereDate('fecha_inicio', '<=', $periodo->copy()->endOfMonth())

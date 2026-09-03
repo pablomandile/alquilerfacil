@@ -20,6 +20,7 @@ const props = defineProps<{
         cbu: string | null;
         alias_cbu: string | null;
         notas: string | null;
+        tiene_acceso: boolean;
     };
 }>();
 
@@ -98,6 +99,16 @@ function enviar() {
                     <Label for="email">Email</Label>
                     <Input id="email" v-model="form.email" type="email" />
                     <InputError :message="form.errors.email" />
+                    <p
+                        v-if="propietario?.tiene_acceso"
+                        class="text-xs text-emerald-600 dark:text-emerald-400"
+                    >
+                        Ya entra a la app y co-administra sus propiedades.
+                    </p>
+                    <p v-else class="text-muted-foreground text-xs">
+                        Si carga este email y entra con Google, se le da acceso
+                        para co-administrar sus propiedades.
+                    </p>
                 </div>
                 <div class="grid gap-2">
                     <Label for="telefono">Teléfono</Label>

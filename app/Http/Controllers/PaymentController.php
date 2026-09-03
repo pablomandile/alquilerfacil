@@ -13,6 +13,8 @@ class PaymentController extends Controller
 {
     public function store(Request $request, RentCharge $charge): RedirectResponse
     {
+        $this->authorize('create', [Payment::class, $charge]);
+
         $datos = $request->validate([
             'fecha' => ['required', 'date'],
             'monto' => ['required', 'numeric', 'gt:0'],
@@ -29,6 +31,8 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment): RedirectResponse
     {
+        $this->authorize('delete', $payment);
+
         $payment->delete();
 
         return back()->with('success', 'Pago eliminado.');

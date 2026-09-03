@@ -18,7 +18,7 @@ defineProps<{
         cbu: string | null;
         alias_cbu: string | null;
         propiedades: number;
-        tiene_acceso: boolean;
+        vinculo: 'con_cuenta' | 'pendiente' | 'sin_email';
     }>;
 }>();
 
@@ -114,10 +114,13 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                         {{ o.propiedades === 1 ? 'propiedad' : 'propiedades' }}
                     </span>
                     <span
-                        v-if="o.tiene_acceso"
+                        v-if="o.vinculo === 'con_cuenta'"
                         class="text-emerald-600 dark:text-emerald-400"
                     >
                         · entra a la app
+                    </span>
+                    <span v-else-if="o.vinculo === 'pendiente'">
+                        · todavía no ingresó
                     </span>
                 </div>
             </article>

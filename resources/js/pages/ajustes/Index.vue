@@ -50,6 +50,7 @@ defineOptions({
 
 const page = usePage();
 const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
+const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 
 /* Aplicar: se puede editar el monto antes de confirmar, porque lo que se pacta
    con el inquilino no siempre es exactamente lo que da la cuenta. */
@@ -219,7 +220,7 @@ function recalcular() {
                             </span>
                         </div>
 
-                        <div v-if="esAdmin" class="flex shrink-0 gap-2">
+                        <div v-if="puedeGestionar" class="flex shrink-0 gap-2">
                             <Button size="sm" @click="abrirAplicar(ajuste)">
                                 Aplicar
                             </Button>

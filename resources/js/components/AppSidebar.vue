@@ -38,6 +38,7 @@ import type { NavItem } from '@/types';
 
 const page = usePage();
 const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
+const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 
 const gestion: NavItem[] = [
     { title: 'Panel', href: dashboard(), icon: LayoutGrid },
@@ -56,34 +57,23 @@ const dinero: NavItem[] = [
     },
 ];
 
-// Los índices y las personas son datos de referencia: sólo los toca el admin.
-const referencia = computed<NavItem[]>(() =>
-    esAdmin.value
+// Propietarios lo ve cualquiera (se ve a sí mismo). Inquilinos, quien gestiona
+// alguna propiedad (los necesita para armar un contrato). Índices, sólo el admin.
+const referencia = computed<NavItem[]>(() => [
+    { title: 'Propietarios', href: rutasPropietarios.index(), icon: Users },
+    ...(puedeGestionar.value
         ? [
-              {
-                  title: 'Propietarios',
-                  href: rutasPropietarios.index(),
-                  icon: Users,
-              },
               {
                   title: 'Inquilinos',
                   href: rutasInquilinos.index(),
                   icon: UserSquare,
               },
-              {
-                  title: 'Índices',
-                  href: rutasIndices.index(),
-                  icon: TrendingUp,
-              },
           ]
-        : [
-              {
-                  title: 'Propietarios',
-                  href: rutasPropietarios.index(),
-                  icon: Users,
-              },
-          ],
-);
+        : []),
+    ...(esAdmin.value
+        ? [{ title: 'Índices', href: rutasIndices.index(), icon: TrendingUp }]
+        : []),
+]);
 </script>
 
 <template>

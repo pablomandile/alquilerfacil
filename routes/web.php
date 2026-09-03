@@ -36,11 +36,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |----------------------------------------------------------------------
-    | Escritura: sólo el administrador
+    | Escritura de estructura: sólo el administrador
     |----------------------------------------------------------------------
     |
-    | Van primero para que /propiedades/create no lo capture el {property}
-    | de la ruta de detalle.
+    | Va primero para que /propiedades/create no lo capture el {property}
+    | de la ruta de detalle. El alta/baja de propiedades, quién es dueño y
+    | con qué %, los índices y el recálculo global de ajustes son del admin.
     */
     Route::middleware('admin')->group(function () {
         Route::resource('propiedades', PropertyController::class)
@@ -51,38 +52,47 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->parameters(['propietarios' => 'owner'])
             ->except(['index', 'show']);
 
-        Route::resource('inquilinos', TenantController::class)
-            ->parameters(['inquilinos' => 'tenant'])
-            ->except(['index', 'show']);
-
-        Route::resource('contratos', ContractController::class)
-            ->parameters(['contratos' => 'contract'])
-            ->except(['index', 'show']);
-
-        Route::resource('gastos', ExpenseController::class)
-            ->parameters(['gastos' => 'expense'])
-            ->except(['index', 'show']);
-
-        // Ajustes: la app propone, el usuario decide.
         Route::post('ajustes/recalcular', [RentAdjustmentController::class, 'recalcular'])
             ->name('ajustes.recalcular');
-        Route::post('ajustes/{adjustment}/aplicar', [RentAdjustmentController::class, 'aplicar'])
-            ->name('ajustes.aplicar');
-        Route::post('ajustes/{adjustment}/rechazar', [RentAdjustmentController::class, 'rechazar'])
-            ->name('ajustes.rechazar');
 
-        // Cobranzas
-        Route::post('cobranzas/generar', [RentChargeController::class, 'generar'])
-            ->name('cobranzas.generar');
-        Route::post('cobranzas/{charge}/pagos', [PaymentController::class, 'store'])
-            ->name('pagos.store');
-        Route::delete('pagos/{payment}', [PaymentController::class, 'destroy'])
-            ->name('pagos.destroy');
-
-        // Índices
         Route::post('indices/sincronizar', [IndiceController::class, 'sincronizar'])
             ->name('indices.sincronizar');
     });
+
+    /*
+    |----------------------------------------------------------------------
+    | Gestión: el admin y los copropietarios de la propiedad
+    |----------------------------------------------------------------------
+    |
+    | La autorización fina la hacen las policies en cada controlador
+    | (ExpensePolicy, ContractPolicy, ...): un propietario sólo puede sobre
+    | las propiedades donde figura como dueño.
+    */
+    Route::resource('contratos', ContractController::class)
+        ->parameters(['contratos' => 'contract'])
+        ->except(['index', 'show']);
+
+    Route::resource('gastos', ExpenseController::class)
+        ->parameters(['gastos' => 'expense'])
+        ->except(['index', 'show']);
+
+    Route::resource('inquilinos', TenantController::class)
+        ->parameters(['inquilinos' => 'tenant'])
+        ->except(['index', 'show']);
+
+    // Ajustes: la app propone, el dueño decide.
+    Route::post('ajustes/{adjustment}/aplicar', [RentAdjustmentController::class, 'aplicar'])
+        ->name('ajustes.aplicar');
+    Route::post('ajustes/{adjustment}/rechazar', [RentAdjustmentController::class, 'rechazar'])
+        ->name('ajustes.rechazar');
+
+    // Cobranzas
+    Route::post('cobranzas/generar', [RentChargeController::class, 'generar'])
+        ->name('cobranzas.generar');
+    Route::post('cobranzas/{charge}/pagos', [PaymentController::class, 'store'])
+        ->name('pagos.store');
+    Route::delete('pagos/{payment}', [PaymentController::class, 'destroy'])
+        ->name('pagos.destroy');
 
     /*
     |----------------------------------------------------------------------

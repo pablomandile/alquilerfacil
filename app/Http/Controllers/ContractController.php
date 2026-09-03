@@ -119,14 +119,17 @@ class ContractController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('contratos/Form', $this->datosDelFormulario());
+        $this->authorize('create', Contract::class);
+
+        return Inertia::render('contratos/Form', $this->datosDelFormulario($request));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $datos = $this->validado($request);
+        $this->authorize('create', [Contract::class, Property::findOrFail($datos['property_id'])]);
 
         // El alquiler arranca valiendo lo pactado; el ajuste lo mueve después.
         $datos['monto_actual'] = $datos['monto_base'];
@@ -136,10 +139,12 @@ class ContractController extends Controller
         return to_route('contratos.show', $contrato)->with('success', 'Contrato creado.');
     }
 
-    public function edit(Contract $contract): Response
+    public function edit(Request $request, Contract $contract): Response
     {
+        $this->authorize('update', $contract);
+
         return Inertia::render('contratos/Form', [
-            ...$this->datosDelFormulario(),
+            ...$this->datosDelFormulario($request),
             'contrato' => [
                 ...$contract->only([
                     'id', 'property_id', 'tenant_id', 'monto_base', 'monto_actual',
@@ -156,13 +161,23 @@ class ContractController extends Controller
 
     public function update(Request $request, Contract $contract): RedirectResponse
     {
-        $contract->update($this->validado($request, editando: true));
+        $this->authorize('update', $contract);
+
+        $datos = $this->validado($request, editando: true);
+
+        if ((int) $datos['property_id'] !== $contract->property_id) {
+            $this->authorize('create', [Contract::class, Property::findOrFail($datos['property_id'])]);
+        }
+
+        $contract->update($datos);
 
         return to_route('contratos.show', $contract)->with('success', 'Contrato actualizado.');
     }
 
     public function destroy(Contract $contract): RedirectResponse
     {
+        $this->authorize('delete', $contract);
+
         if ($contract->charges()->exists()) {
             return back()->with('error', 'No se puede borrar: el contrato tiene cargos emitidos.');
         }
@@ -194,11 +209,17 @@ class ContractController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function datosDelFormulario(): array
+    private function datosDelFormulario(Request $request): array
     {
         return [
-            'propiedades' => Property::query()->orderBy('alias')->get(['id', 'alias']),
-            'inquilinos' => Tenant::query()->orderBy('nombre')->get(['id', 'nombre']),
+            'propiedades' => Property::query()
+                ->visiblePara($request->user())
+                ->orderBy('alias')
+                ->get(['id', 'alias']),
+            'inquilinos' => Tenant::query()
+                ->visiblePara($request->user())
+                ->orderBy('nombre')
+                ->get(['id', 'nombre']),
             'indices' => Opciones::de(Indice::class),
             'estados' => Opciones::de(EstadoContrato::class),
             'opcionesRedondeo' => [

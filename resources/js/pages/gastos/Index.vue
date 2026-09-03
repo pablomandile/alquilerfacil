@@ -44,7 +44,7 @@ defineOptions({
 });
 
 const page = usePage();
-const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
+const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 
 const filtro = ref({
     property_id: props.filtros.property_id ?? '',
@@ -76,7 +76,7 @@ const total = computed(() =>
             :descripcion="`${gastos.length} gastos · ${pesos(total)} en total`"
         >
             <template #acciones>
-                <Button v-if="esAdmin" as-child size="sm">
+                <Button v-if="puedeGestionar" as-child size="sm">
                     <Link :href="rutasGastos.create()">
                         <Plus class="size-4" />
                         Nuevo gasto
@@ -126,7 +126,7 @@ const total = computed(() =>
             descripcion="Cargá acá los servicios, expensas, impuestos y arreglos. Los que van a cargo de los dueños se reparten solos según su porcentaje."
             :icono="Receipt"
         >
-            <Button v-if="esAdmin" as-child size="sm">
+            <Button v-if="puedeGestionar" as-child size="sm">
                 <Link :href="rutasGastos.create()">Cargar un gasto</Link>
             </Button>
         </EmptyState>
@@ -177,7 +177,7 @@ const total = computed(() =>
                             "
                         />
                         <Button
-                            v-if="esAdmin"
+                            v-if="puedeGestionar"
                             as-child
                             size="icon"
                             variant="ghost"

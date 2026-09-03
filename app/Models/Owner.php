@@ -38,6 +38,25 @@ class Owner extends Model
     /** @use HasFactory<OwnerFactory> */
     use HasFactory;
 
+    /**
+     * Si la ficha tiene un email que coincide con una cuenta ya registrada,
+     * se vincula sola. El otro lado (la cuenta que entra y encuentra su ficha)
+     * lo resuelve el listener VincularOwnerAlIngresar.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Owner $owner): void {
+            if ($owner->user_id !== null || $owner->email === null) {
+                return;
+            }
+
+            $owner->user_id = User::query()
+                ->where('email', $owner->email)
+                ->whereDoesntHave('owner')
+                ->value('id');
+        });
+    }
+
     protected function casts(): array
     {
         return [

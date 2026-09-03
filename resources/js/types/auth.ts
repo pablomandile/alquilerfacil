@@ -16,10 +16,13 @@ export type User = {
 export type Auth = {
     user: User;
     /**
-     * Sirve para no mostrar botones que igual van a dar 403. La restricción de
-     * verdad está en el middleware `admin`, no acá.
+     * Para esconder botones que igual darían 403. La restricción de verdad la
+     * hacen el middleware `admin` y las policies, no acá.
      */
     esAdmin: boolean;
+    esPropietario: boolean;
+    /** Gestiona al menos una propiedad → puede ver los botones "Nuevo…". */
+    puedeGestionar: boolean;
 };
 
 export type Passkey = {

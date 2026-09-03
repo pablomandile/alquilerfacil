@@ -73,22 +73,29 @@ class ExpenseController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('gastos/Form', $this->datosDelFormulario());
+        $this->authorize('create', Expense::class);
+
+        return Inertia::render('gastos/Form', $this->datosDelFormulario($request));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $gasto = Expense::query()->create($this->validado($request));
+        $datos = $this->validado($request);
+        $this->authorize('create', [Expense::class, Property::findOrFail($datos['property_id'])]);
+
+        $gasto = Expense::query()->create($datos);
 
         return $this->repartirYVolver($gasto, 'Gasto cargado.');
     }
 
-    public function edit(Expense $expense): Response
+    public function edit(Request $request, Expense $expense): Response
     {
+        $this->authorize('update', $expense);
+
         return Inertia::render('gastos/Form', [
-            ...$this->datosDelFormulario(),
+            ...$this->datosDelFormulario($request),
             'gasto' => [
                 ...$expense->only(['id', 'property_id', 'contract_id', 'descripcion', 'monto', 'notas', 'pagado']),
                 'tipo' => $expense->tipo->value,
@@ -103,13 +110,24 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense): RedirectResponse
     {
-        $expense->update($this->validado($request));
+        $this->authorize('update', $expense);
+
+        $datos = $this->validado($request);
+
+        // Si lo mueve a otra propiedad, tiene que poder gestionar también esa.
+        if ($datos['property_id'] !== $expense->property_id) {
+            $this->authorize('create', [Expense::class, Property::findOrFail($datos['property_id'])]);
+        }
+
+        $expense->update($datos);
 
         return $this->repartirYVolver($expense->fresh(), 'Gasto actualizado.');
     }
 
     public function destroy(Expense $expense): RedirectResponse
     {
+        $this->authorize('delete', $expense);
+
         $expense->delete();
 
         return to_route('gastos.index')->with('success', 'Gasto eliminado.');
@@ -157,11 +175,15 @@ class ExpenseController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function datosDelFormulario(): array
+    private function datosDelFormulario(Request $request): array
     {
         return [
-            'propiedades' => Property::query()->orderBy('alias')->get(['id', 'alias']),
+            'propiedades' => Property::query()
+                ->visiblePara($request->user())
+                ->orderBy('alias')
+                ->get(['id', 'alias']),
             'contratos' => Contract::query()
+                ->visiblePara($request->user())
                 ->activos()
                 ->with('property:id,alias')
                 ->get()

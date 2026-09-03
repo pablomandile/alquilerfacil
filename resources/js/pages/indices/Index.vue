@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { RefreshCw } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import { numero, porcentaje } from '@/lib/formato';
 import rutasIndices from '@/routes/indices';
+
+// Sincronizar es sólo del admin; un propietario ve los valores pero no el botón.
+const esAdmin = computed(() => usePage().props.auth?.esAdmin ?? false);
 
 defineProps<{
     series: Array<{
@@ -49,6 +52,7 @@ function sincronizar(fuente?: string) {
         >
             <template #acciones>
                 <Button
+                    v-if="esAdmin"
                     size="sm"
                     variant="outline"
                     :disabled="sincronizando !== null"
@@ -83,6 +87,7 @@ function sincronizar(fuente?: string) {
                     </p>
                 </div>
                 <Button
+                    v-if="esAdmin"
                     size="sm"
                     variant="ghost"
                     :disabled="sincronizando !== null"

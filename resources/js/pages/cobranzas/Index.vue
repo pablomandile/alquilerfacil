@@ -59,7 +59,7 @@ defineOptions({
 });
 
 const page = usePage();
-const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
+const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 
 const periodoElegido = ref(props.periodo);
 
@@ -127,7 +127,7 @@ function borrarPago(id: number) {
                     @change="cambiarPeriodo"
                 />
                 <Button
-                    v-if="esAdmin"
+                    v-if="puedeGestionar"
                     size="sm"
                     variant="outline"
                     @click="generarCargos"
@@ -160,7 +160,7 @@ function borrarPago(id: number) {
             descripcion="Los cargos se emiten solos el día 1. Si querés adelantarlos, usá «Emitir cargos»."
             :icono="Wallet"
         >
-            <Button v-if="esAdmin" size="sm" @click="generarCargos">
+            <Button v-if="puedeGestionar" size="sm" @click="generarCargos">
                 Emitir los de {{ periodoLabel }}
             </Button>
         </EmptyState>
@@ -204,7 +204,7 @@ function borrarPago(id: number) {
                             :label="cargo.estado_label"
                         />
                         <Button
-                            v-if="esAdmin && Number(cargo.saldo) > 0"
+                            v-if="puedeGestionar && Number(cargo.saldo) > 0"
                             size="sm"
                             @click="abrirCobro(cargo)"
                         >
@@ -235,7 +235,7 @@ function borrarPago(id: number) {
                                 {{ pesos(pago.monto) }}
                             </span>
                             <Button
-                                v-if="esAdmin"
+                                v-if="puedeGestionar"
                                 size="icon"
                                 variant="ghost"
                                 class="size-7"
