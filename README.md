@@ -38,10 +38,10 @@ propuesta y aparece en la pantalla de Ajustes.
 No de encadenar las variaciones mensuales. Con los valores reales del INDEC para
 el trimestre mayo–julio 2026:
 
-| Método | Coeficiente |
-|---|---|
-| `IPC[jul] / IPC[abr]` = `12076,3937 / 11363,0904` | **1,06277370** |
-| `1,0215 × 1,0189 × 1,0211` (encadenando los % publicados) | 1,06276736 |
+| Método                                                    | Coeficiente    |
+| --------------------------------------------------------- | -------------- |
+| `IPC[jul] / IPC[abr]` = `12076,3937 / 11363,0904`         | **1,06277370** |
+| `1,0215 × 1,0189 × 1,0211` (encadenando los % publicados) | 1,06276736     |
 
 La diferencia es el redondeo que se acumula al encadenar porcentajes. Por eso
 `index_values` guarda el **número índice** y no la variación.
@@ -54,16 +54,16 @@ alrededor del 15 de octubre.
 
 Cuando falta el índice que cierra la ventana, el cálculo devuelve
 `IndiceNoDisponible` con la fecha estimada de publicación, en vez de calcular con
-los datos que haya. La pantalla lo muestra como *"Falta el IPC de agosto de 2026,
-que se publica alrededor del 15 de septiembre"*, y la propuesta aparece sola
+los datos que haya. La pantalla lo muestra como _"Falta el IPC de agosto de 2026,
+que se publica alrededor del 15 de septiembre"_, y la propuesta aparece sola
 cuando el índice se sincroniza.
 
 ### Fuentes de datos
 
-| Índice | Origen | Endpoint |
-|---|---|---|
+| Índice       | Origen                 | Endpoint                                                             |
+| ------------ | ---------------------- | -------------------------------------------------------------------- |
 | IPC Nacional | INDEC vía datos.gob.ar | `apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26` |
-| ICL | BCRA | `api.bcra.gob.ar/estadisticas/v4.0/Monetarias/40` |
+| ICL          | BCRA                   | `api.bcra.gob.ar/estadisticas/v4.0/Monetarias/40`                    |
 
 Ambas son públicas y sin autenticación. El **IPCBA** de la Ciudad quedó afuera a
 propósito: sólo se publica en PDF y XLSX, no tiene API. Si hace falta, se carga a
@@ -91,11 +91,11 @@ de mayor porcentaje, con desempate por `owner_id` para que sea determinístico.
 
 ## Roles
 
-| | Administrador | Propietario |
-|---|---|---|
-| Ver | todo | sólo sus propiedades |
-| Crear, editar, borrar | sí | no |
-| Ver a los otros dueños | sí | no |
+|                        | Administrador | Propietario          |
+| ---------------------- | ------------- | -------------------- |
+| Ver                    | todo          | sólo sus propiedades |
+| Crear, editar, borrar  | sí            | no                   |
+| Ver a los otros dueños | sí            | no                   |
 
 Las rutas de escritura pasan por el middleware `admin`. Las de lectura filtran con
 el scope `Property::visiblePara()`, y pedir algo ajeno devuelve **404 y no 403**,
@@ -103,11 +103,11 @@ para no confirmar que exista.
 
 ## Comandos
 
-| Comando | Cuándo corre | Qué hace |
-|---|---|---|
-| `indices:sincronizar` | diario 09:00 | Baja IPC e ICL. Idempotente |
-| `ajustes:proponer` | diario 09:15 | Calcula los ajustes que están en fecha |
-| `cargos:generar` | día 1, 06:00 | Emite el alquiler del mes y lo reparte |
+| Comando               | Cuándo corre | Qué hace                               |
+| --------------------- | ------------ | -------------------------------------- |
+| `indices:sincronizar` | diario 09:00 | Baja IPC e ICL. Idempotente            |
+| `ajustes:proponer`    | diario 09:15 | Calcula los ajustes que están en fecha |
+| `cargos:generar`      | día 1, 06:00 | Emite el alquiler del mes y lo reparte |
 
 Los tres son idempotentes: volver a correrlos no duplica nada.
 
