@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\EstadoContrato;
 use App\Enums\Indice;
+use App\Enums\TipoDocumentoContrato;
 use App\Models\Contract;
+use App\Models\ContractDocument;
 use App\Models\Property;
 use App\Models\Tenant;
 use App\Services\Ajustes\CalculadorDeAjuste;
@@ -58,6 +60,7 @@ class ContractController extends Controller
             'tenant',
             'adjustments',
             'charges.payments',
+            'documents.uploader:id,name',
         ]);
 
         // Se calcula al vuelo para mostrar cuánto daría hoy el próximo ajuste,
@@ -104,6 +107,17 @@ class ContractController extends Controller
                     'estado' => $c->estado->value,
                     'estado_label' => $c->estado->label(),
                 ]),
+                'documentos' => $contract->documents->map(fn (ContractDocument $d) => [
+                    'id' => $d->id,
+                    'tipo' => $d->tipo->value,
+                    'tipo_label' => $d->tipo->label(),
+                    'nota' => $d->nota,
+                    'nombre' => $d->nombre_original,
+                    'tamano' => $d->tamano,
+                    'mime' => $d->mime,
+                    'subido_por' => $d->uploader?->name,
+                    'fecha' => $d->created_at?->format('d/m/Y'),
+                ]),
             ],
             'proyeccion' => $proyeccion instanceof PropuestaDeAjuste
                 ? [
@@ -116,6 +130,7 @@ class ContractController extends Controller
                 : ($proyeccion !== null
                     ? ['disponible' => false, 'motivo' => $proyeccion->motivo()]
                     : null),
+            'tiposDocumento' => Opciones::de(TipoDocumentoContrato::class),
         ]);
     }
 

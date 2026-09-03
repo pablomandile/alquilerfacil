@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\ContractDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IndiceController;
@@ -71,6 +72,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('contratos', ContractController::class)
         ->parameters(['contratos' => 'contract'])
         ->except(['index', 'show']);
+
+    // Documentos del contrato: el contrato firmado, la garantía, el pagaré, etc.
+    Route::post('contratos/{contract}/documentos', [ContractDocumentController::class, 'store'])
+        ->name('documentos.store');
+    Route::get('documentos/{document}', [ContractDocumentController::class, 'show'])
+        ->name('documentos.show');
+    Route::delete('documentos/{document}', [ContractDocumentController::class, 'destroy'])
+        ->name('documentos.destroy');
 
     Route::resource('gastos', ExpenseController::class)
         ->parameters(['gastos' => 'expense'])

@@ -22,6 +22,10 @@ const decimal = new Intl.NumberFormat('es-AR', {
     maximumFractionDigits: 2,
 });
 
+const unDecimal = new Intl.NumberFormat('es-AR', {
+    maximumFractionDigits: 1,
+});
+
 /** Los montos viajan como string desde PHP para no perder precisión. */
 export function pesos(valor: string | number | null | undefined): string {
     if (valor === null || valor === undefined || valor === '') return '—';
@@ -46,4 +50,12 @@ export function porcentaje(valor: number | string | null | undefined): string {
     if (valor === null || valor === undefined || valor === '') return '—';
     const n = Number(valor);
     return `${n > 0 ? '+' : ''}${decimal.format(n)} %`;
+}
+
+/** Tamaño de archivo legible: «840 KB», «2,3 MB». */
+export function tamano(bytes: number | null | undefined): string {
+    if (!bytes || bytes < 0) return '—';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${unDecimal.format(bytes / (1024 * 1024))} MB`;
 }

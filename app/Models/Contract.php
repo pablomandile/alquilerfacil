@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
@@ -41,6 +42,17 @@ class Contract extends Model
 {
     /** @use HasFactory<ContractFactory> */
     use HasFactory;
+
+    /**
+     * Al borrar el contrato se van también sus archivos del disco. Las filas de
+     * `contract_documents` caen solas por la foreign key.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Contract $contract): void {
+            Storage::disk('local')->deleteDirectory("contratos/{$contract->id}");
+        });
+    }
 
     protected function casts(): array
     {
@@ -84,6 +96,12 @@ class Contract extends Model
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
+    }
+
+    /** @return HasMany<ContractDocument, $this> */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ContractDocument::class)->latest();
     }
 
     /**
