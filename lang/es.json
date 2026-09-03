@@ -1,7 +1,7 @@
 {
     "(and :count more error)": "(y :count error más)",
     "(and :count more errors)": "(y :count error más)|(y :count errores más)|(y :count errores más)",
-    ":inviterName has invited you to join the :teamName team.": ":inviterName le ha invitado a unirse al equipo :teamName.",
+    ":inviterName has invited you to join the :teamName team.": ":inviterName te invitó a unirte al equipo :teamName.",
     "A decryption key is required.": "Se requiere una clave de descifrado.",
     "A Timeout Occurred": "Se produjo un tiempo de espera",
     "Accept": "Aceptar",
@@ -269,6 +269,6 @@
     "Whoops!": "¡Ups!",
     "Yes": "Sí",
     "You are receiving this email because we received a password reset request for your account.": "Recibís este mail porque se pidió restablecer la contraseña de tu cuenta.",
-    "You left the team \":name\"": "Usted ha abandonado el equipo \":name\"",
-    "You've been invited to join :teamName": "Usted ha sido invitado a unirse a :teamName"
+    "You left the team \":name\"": "Dejaste el equipo \":name\"",
+    "You've been invited to join :teamName": "Te invitaron a unirte a :teamName"
 }
