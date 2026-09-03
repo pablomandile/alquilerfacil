@@ -6,6 +6,7 @@ use App\Enums\RolUsuario;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class GoogleLoginTest extends TestCase
@@ -35,7 +36,7 @@ class GoogleLoginTest extends TestCase
         ]);
     }
 
-    /** @return \Illuminate\Testing\TestResponse */
+    /** @return TestResponse */
     private function hitCallback(string $state = 'estado-valido', array $query = [])
     {
         return $this->withSession(['google_oauth_state' => 'estado-valido'])

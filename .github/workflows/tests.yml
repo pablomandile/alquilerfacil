@@ -13,16 +13,34 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    # composer setup corre `artisan migrate` y .env.example apunta a MySQL, así
+    # que el runner necesita la base aunque los tests usen sqlite (phpunit.xml).
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: alquilerfacil
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      # El composer.lock arrastra Symfony 8.1, que exige php >= 8.4.1. Con 8.3
+      # el `composer install` corta antes de llegar a los tests.
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           tools: composer:v2
           coverage: none
 
