@@ -13,6 +13,14 @@ use Carbon\CarbonInterface;
  */
 readonly class PropuestaDeAjuste
 {
+    /**
+     * @param  numeric-string  $montoAnterior
+     * @param  numeric-string  $montoNuevo
+     * @param  numeric-string  $coeficiente
+     * @param  numeric-string  $valorIndiceDesde
+     * @param  numeric-string  $valorIndiceHasta
+     * @param  numeric-string  $variacionPorcentual
+     */
     public function __construct(
         public Contract $contract,
         public CarbonInterface $vigenciaDesde,
@@ -27,6 +35,7 @@ readonly class PropuestaDeAjuste
         public string $variacionPorcentual,
     ) {}
 
+    /** @return numeric-string */
     public function diferencia(): string
     {
         return bcsub($this->montoNuevo, $this->montoAnterior, 2);

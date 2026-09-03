@@ -4,12 +4,17 @@ namespace App\Http\Requests;
 
 use App\Enums\EstadoPropiedad;
 use App\Enums\TipoPropiedad;
+use App\Support\Decimal;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class PropertyRequest extends FormRequest
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -34,11 +39,14 @@ class PropertyRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return list<Closure(Validator): void>
+     */
     public function after(): array
     {
         return [
-            function (Validator $validator) {
-                $propietarios = $this->input('propietarios', []);
+            function (Validator $validator): void {
+                $propietarios = (array) $this->input('propietarios', []);
 
                 if ($propietarios === []) {
                     return;
@@ -46,11 +54,11 @@ class PropertyRequest extends FormRequest
 
                 // Sin esta regla el reparto del alquiler quedaría incompleto o de
                 // más, y el error recién aparecería al emitir un cargo.
-                $suma = array_reduce(
-                    $propietarios,
-                    fn ($acc, $p) => bcadd($acc, (string) ($p['porcentaje'] ?? 0), 2),
-                    '0'
-                );
+                $suma = '0';
+                foreach ($propietarios as $p) {
+                    $porcentaje = is_array($p) ? ($p['porcentaje'] ?? null) : null;
+                    $suma = bcadd($suma, Decimal::desde($porcentaje), 2);
+                }
 
                 if (bccomp($suma, '100', 2) !== 0) {
                     $validator->errors()->add(

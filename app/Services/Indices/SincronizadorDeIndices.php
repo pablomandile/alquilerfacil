@@ -5,6 +5,7 @@ namespace App\Services\Indices;
 use App\Enums\Indice;
 use App\Exceptions\FuenteDeIndiceException;
 use App\Models\IndexValue;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -86,7 +87,7 @@ class SincronizadorDeIndices
     }
 
     /**
-     * @param  Collection<int, array{fecha: CarbonInterface, valor: string}>  $valores
+     * @param  Collection<int, array{fecha: CarbonImmutable, valor: string}>  $valores
      */
     private function guardar(Indice $indice, Collection $valores): int
     {

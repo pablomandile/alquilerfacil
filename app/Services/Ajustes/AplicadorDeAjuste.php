@@ -46,7 +46,7 @@ class AplicadorDeAjuste
     /**
      * Aplica el ajuste: pasa a ser el nuevo valor del alquiler.
      *
-     * @param  string|null  $montoEditado  Monto pactado, si difiere del calculado.
+     * @param  numeric-string|null  $montoEditado  Monto pactado, si difiere del calculado.
      */
     public function aplicar(RentAdjustment $ajuste, ?string $montoEditado = null): RentAdjustment
     {

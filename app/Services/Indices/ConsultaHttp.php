@@ -38,6 +38,9 @@ trait ConsultaHttp
      * Hace la consulta y devuelve el JSON decodificado, convirtiendo cualquier
      * falla en una excepción con un mensaje que se entienda en pantalla.
      *
+     * @param  array<string, scalar|null>  $params
+     * @return array<mixed>
+     *
      * @throws FuenteDeIndiceException
      */
     protected function pedir(string $url, array $params): array

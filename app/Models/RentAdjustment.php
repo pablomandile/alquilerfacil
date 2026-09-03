@@ -22,15 +22,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $contract_id
  * @property CarbonInterface $vigencia_desde
- * @property string $monto_anterior
- * @property string $monto_nuevo
- * @property string $coeficiente
+ * @property numeric-string $monto_anterior
+ * @property numeric-string $monto_nuevo
+ * @property numeric-string $coeficiente
  * @property Indice $indice
  * @property CarbonInterface $periodo_indice_desde
  * @property CarbonInterface $periodo_indice_hasta
- * @property string $valor_indice_desde
- * @property string $valor_indice_hasta
- * @property string $variacion_porcentual
+ * @property numeric-string $valor_indice_desde
+ * @property numeric-string $valor_indice_hasta
+ * @property numeric-string $variacion_porcentual
  * @property EstadoAjuste $estado
  * @property CarbonInterface|null $aplicado_at
  * @property-read Contract $contract
@@ -63,24 +63,34 @@ class RentAdjustment extends Model
         ];
     }
 
+    /** @return BelongsTo<Contract, $this> */
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
     }
 
-    /** @see Property::scopeVisiblePara() */
+    /**
+     * @see Property::scopeVisiblePara()
+     *
+     * @param  Builder<RentAdjustment>  $query
+     * @return Builder<RentAdjustment>
+     */
     public function scopeVisiblePara(Builder $query, User $user): Builder
     {
         if ($user->esAdmin()) {
             return $query;
         }
 
-        return $query->whereHas(
-            'contract',
-            fn (Builder $q) => $q->visiblePara($user)
+        return $query->whereIn(
+            'contract_id',
+            Contract::query()->visiblePara($user)->select('id')
         );
     }
 
+    /**
+     * @param  Builder<RentAdjustment>  $query
+     * @return Builder<RentAdjustment>
+     */
     public function scopePropuestos(Builder $query): Builder
     {
         return $query->where('estado', EstadoAjuste::Propuesto);
@@ -91,7 +101,11 @@ class RentAdjustment extends Model
         return $this->estado === EstadoAjuste::Propuesto;
     }
 
-    /** Diferencia en pesos entre el monto nuevo y el anterior. */
+    /**
+     * Diferencia en pesos entre el monto nuevo y el anterior.
+     *
+     * @return numeric-string
+     */
     public function diferencia(): string
     {
         return bcsub($this->monto_nuevo, $this->monto_anterior, 2);

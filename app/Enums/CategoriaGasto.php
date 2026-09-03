@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum CategoriaGasto: string
+enum CategoriaGasto: string implements Etiquetable
 {
     case Luz = 'luz';
     case Agua = 'agua';

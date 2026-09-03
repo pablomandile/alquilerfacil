@@ -4,6 +4,7 @@ namespace App\Services\Indices;
 
 use App\Enums\Indice;
 use App\Exceptions\FuenteDeIndiceException;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
@@ -31,7 +32,7 @@ class BcraIclSource implements FuenteDeIndice
         $desde ??= Date::parse(config('indices.icl.desde_inicial'));
         $hasta = today();
 
-        $valores = collect();
+        $valores = [];
         $offset = 0;
 
         // La serie completa supera el tope de 1000 por consulta, así que se pagina
@@ -45,17 +46,23 @@ class BcraIclSource implements FuenteDeIndice
             ]);
 
             $pagina = $this->detalleDe($respuesta);
-            $valores = $valores->concat($pagina);
+
+            foreach ($pagina as $fila) {
+                $valores[] = $fila;
+            }
 
             $total = (int) data_get($respuesta, 'metadata.resultset.count', 0);
             $offset += self::LIMITE;
-        } while ($pagina->isNotEmpty() && $valores->count() < $total);
+        } while ($pagina->isNotEmpty() && count($valores) < $total);
 
-        return $valores->sortBy('fecha')->values();
+        usort($valores, fn (array $a, array $b) => $a['fecha'] <=> $b['fecha']);
+
+        return collect($valores);
     }
 
     /**
-     * @return Collection<int, array{fecha: CarbonInterface, valor: string}>
+     * @param  array<mixed>  $respuesta
+     * @return Collection<int, array{fecha: CarbonImmutable, valor: string}>
      */
     private function detalleDe(array $respuesta): Collection
     {

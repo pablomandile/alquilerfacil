@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum TipoDocumento: string
+enum TipoDocumento: string implements Etiquetable
 {
     case Dni = 'dni';
     case Cuit = 'cuit';

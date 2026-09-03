@@ -36,7 +36,8 @@ class IndiceController extends Controller
                             : null,
                     ])
                     ->reverse()
-                    ->values(),
+                    ->values()
+                    ->all(),
             ]),
         ]);
     }

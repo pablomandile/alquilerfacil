@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum EstadoPropiedad: string
+enum EstadoPropiedad: string implements Etiquetable
 {
     case Disponible = 'disponible';
     case Alquilada = 'alquilada';

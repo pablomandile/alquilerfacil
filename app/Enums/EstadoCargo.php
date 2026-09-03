@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum EstadoCargo: string
+enum EstadoCargo: string implements Etiquetable
 {
     case Pendiente = 'pendiente';
     case Parcial = 'parcial';

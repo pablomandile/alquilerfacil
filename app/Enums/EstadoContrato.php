@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum EstadoContrato: string
+enum EstadoContrato: string implements Etiquetable
 {
     case Activo = 'activo';
     case Finalizado = 'finalizado';

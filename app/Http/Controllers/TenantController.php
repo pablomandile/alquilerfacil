@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TipoDocumento;
+use App\Models\Contract;
 use App\Models\Tenant;
 use App\Support\Opciones;
 use Illuminate\Http\RedirectResponse;
@@ -19,9 +20,9 @@ class TenantController extends Controller
 
         $inquilinos = Tenant::query()
             // Un propietario ve sólo a los inquilinos de sus propiedades.
-            ->when(! $usuario->esAdmin(), fn ($q) => $q->whereHas(
-                'contracts',
-                fn ($c) => $c->visiblePara($usuario)
+            ->when(! $usuario->esAdmin(), fn ($q) => $q->whereIn(
+                'id',
+                Contract::query()->visiblePara($usuario)->select('tenant_id')
             ))
             ->with(['contracts.property:id,alias'])
             ->orderBy('nombre')
@@ -33,7 +34,7 @@ class TenantController extends Controller
                 'tipo_documento' => $t->tipo_documento?->label(),
                 'email' => $t->email,
                 'telefono' => $t->telefono,
-                'propiedades' => $t->contracts->map(fn ($c) => $c->property->alias)->unique()->values(),
+                'propiedades' => $t->contracts->map(fn (Contract $c) => $c->property->alias)->unique()->values(),
             ]);
 
         return Inertia::render('inquilinos/Index', [

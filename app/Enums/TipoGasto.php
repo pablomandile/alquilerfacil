@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum TipoGasto: string
+enum TipoGasto: string implements Etiquetable
 {
     case Servicio = 'servicio';
     case Expensas = 'expensas';

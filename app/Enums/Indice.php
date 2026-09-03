@@ -6,7 +6,7 @@ namespace App\Enums;
  * Índice usado para actualizar el alquiler. Es a la vez el índice elegido en el
  * contrato y la fuente de los valores guardados en `index_values`.
  */
-enum Indice: string
+enum Indice: string implements Etiquetable
 {
     case Ipc = 'ipc';
     case Icl = 'icl';

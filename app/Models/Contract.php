@@ -19,10 +19,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $tenant_id
  * @property CarbonInterface $fecha_inicio
  * @property CarbonInterface $fecha_fin
- * @property string $monto_base
- * @property string $monto_actual
+ * @property numeric-string $monto_base
+ * @property numeric-string $monto_actual
  * @property int $dia_vencimiento
- * @property string|null $deposito
+ * @property numeric-string|null $deposito
  * @property Indice $indice
  * @property int $frecuencia_meses
  * @property CarbonInterface|null $proximo_ajuste
@@ -56,44 +56,58 @@ class Contract extends Model
         ];
     }
 
+    /** @return BelongsTo<Property, $this> */
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
     }
 
+    /** @return BelongsTo<Tenant, $this> */
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
+    /** @return HasMany<RentAdjustment, $this> */
     public function adjustments(): HasMany
     {
         return $this->hasMany(RentAdjustment::class)->orderByDesc('vigencia_desde');
     }
 
+    /** @return HasMany<RentCharge, $this> */
     public function charges(): HasMany
     {
         return $this->hasMany(RentCharge::class)->orderByDesc('periodo');
     }
 
+    /** @return HasMany<Expense, $this> */
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
     }
 
-    /** @see Property::scopeVisiblePara() */
+    /**
+     * @see Property::scopeVisiblePara()
+     *
+     * @param  Builder<Contract>  $query
+     * @return Builder<Contract>
+     */
     public function scopeVisiblePara(Builder $query, User $user): Builder
     {
         if ($user->esAdmin()) {
             return $query;
         }
 
-        return $query->whereHas(
-            'property',
-            fn (Builder $q) => $q->visiblePara($user)
+        return $query->whereIn(
+            'property_id',
+            Property::query()->visiblePara($user)->select('id')
         );
     }
 
+    /**
+     * @param  Builder<Contract>  $query
+     * @return Builder<Contract>
+     */
     public function scopeActivos(Builder $query): Builder
     {
         return $query->where('estado', EstadoContrato::Activo);
@@ -102,6 +116,9 @@ class Contract extends Model
     /**
      * Contratos cuya fecha de ajuste ya llegó y todavía no tienen una propuesta
      * generada para ese período.
+     *
+     * @param  Builder<Contract>  $query
+     * @return Builder<Contract>
      */
     public function scopeConAjustePendiente(Builder $query, ?CarbonInterface $hasta = null): Builder
     {

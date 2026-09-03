@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\Owner;
 use App\Models\RentCharge;
+use App\Support\Decimal;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Inertia\Inertia;
@@ -54,16 +56,15 @@ class LiquidacionController extends Controller
                 $alquileres = $this->detalleDeAlquileres($owner, $cargos);
                 $suGasto = $this->detalleDeGastos($owner, $gastos);
 
-                $facturado = $this->sumar($alquileres, 'monto');
-                $cobrado = $this->sumar($alquileres, 'cobrado');
-                $gastado = $this->sumar($suGasto, 'monto');
+                $cobrado = Decimal::sumar(array_column($alquileres, 'cobrado'));
+                $gastado = Decimal::sumar(array_column($suGasto, 'monto'));
 
                 return [
                     'id' => $owner->id,
                     'nombre' => $owner->nombre,
                     'alquileres' => $alquileres,
                     'gastos' => $suGasto,
-                    'facturado' => $facturado,
+                    'facturado' => Decimal::sumar(array_column($alquileres, 'monto')),
                     'cobrado' => $cobrado,
                     'gastos_total' => $gastado,
                     // Lo que efectivamente le queda: lo que entró menos lo que puso.
@@ -83,49 +84,63 @@ class LiquidacionController extends Controller
     /**
      * La parte del alquiler de cada propiedad, con cuánto de eso ya se cobró.
      *
-     * @return list<array<string, mixed>>
+     * @param  Collection<int, RentCharge>  $cargos
+     * @return list<array{propiedad: string, porcentaje: float, monto: numeric-string, cobrado: numeric-string, estado: string}>
      */
-    private function detalleDeAlquileres(Owner $owner, $cargos): array
+    private function detalleDeAlquileres(Owner $owner, Collection $cargos): array
     {
-        return $cargos
-            ->flatMap(fn (RentCharge $cargo) => $cargo->shares
-                ->where('owner_id', $owner->id)
-                ->map(fn ($share) => [
+        $filas = [];
+
+        foreach ($cargos as $cargo) {
+            foreach ($cargo->shares->where('owner_id', $owner->id) as $share) {
+                $filas[] = [
                     'propiedad' => $cargo->contract->property->alias,
                     'porcentaje' => (float) $share->porcentaje,
-                    'monto' => (string) $share->monto,
+                    'monto' => $share->monto,
                     // La plata le llega al dueño en la misma proporción en que el
                     // inquilino pagó: si pagó la mitad, le toca la mitad.
                     'cobrado' => $this->proporcional(
-                        (string) $share->monto,
+                        $share->monto,
                         $cargo->totalPagado(),
-                        (string) $cargo->monto
+                        $cargo->monto
                     ),
                     'estado' => $cargo->estado->label(),
-                ])
-            )
-            ->values()
-            ->all();
+                ];
+            }
+        }
+
+        return $filas;
     }
 
-    /** @return list<array<string, mixed>> */
-    private function detalleDeGastos(Owner $owner, $gastos): array
+    /**
+     * @param  Collection<int, Expense>  $gastos
+     * @return list<array{propiedad: string, descripcion: string, porcentaje: float, monto: numeric-string, pagado: bool}>
+     */
+    private function detalleDeGastos(Owner $owner, Collection $gastos): array
     {
-        return $gastos
-            ->flatMap(fn (Expense $gasto) => $gasto->shares
-                ->where('owner_id', $owner->id)
-                ->map(fn ($share) => [
+        $filas = [];
+
+        foreach ($gastos as $gasto) {
+            foreach ($gasto->shares->where('owner_id', $owner->id) as $share) {
+                $filas[] = [
                     'propiedad' => $gasto->property->alias,
                     'descripcion' => $gasto->descripcion ?: $gasto->categoria->label(),
                     'porcentaje' => (float) $share->porcentaje,
-                    'monto' => (string) $share->monto,
+                    'monto' => $share->monto,
                     'pagado' => $gasto->pagado,
-                ])
-            )
-            ->values()
-            ->all();
+                ];
+            }
+        }
+
+        return $filas;
     }
 
+    /**
+     * @param  numeric-string  $parte
+     * @param  numeric-string  $pagado
+     * @param  numeric-string  $total
+     * @return numeric-string
+     */
     private function proporcional(string $parte, string $pagado, string $total): string
     {
         if (bccomp($total, '0', 2) === 0) {
@@ -133,15 +148,5 @@ class LiquidacionController extends Controller
         }
 
         return bcdiv(bcmul($parte, $pagado, 8), $total, 2);
-    }
-
-    /** @param  list<array<string, mixed>>  $filas */
-    private function sumar(array $filas, string $campo): string
-    {
-        return array_reduce(
-            $filas,
-            fn (string $acc, array $fila) => bcadd($acc, (string) $fila[$campo], 2),
-            '0'
-        );
     }
 }

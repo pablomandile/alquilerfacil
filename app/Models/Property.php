@@ -53,19 +53,26 @@ class Property extends Model
         ];
     }
 
+    /** @return BelongsToMany<Owner, $this, PropertyOwner, 'pivot'> */
     public function owners(): BelongsToMany
     {
         return $this->belongsToMany(Owner::class, 'property_owner')
+            ->using(PropertyOwner::class)
             ->withPivot('porcentaje')
             ->withTimestamps();
     }
 
+    /** @return HasMany<Contract, $this> */
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
     }
 
-    /** El contrato vigente, si hay alguno. */
+    /**
+     * El contrato vigente, si hay alguno.
+     *
+     * @return HasOne<Contract, $this>
+     */
     public function contratoActivo(): HasOne
     {
         return $this->hasOne(Contract::class)
@@ -73,6 +80,7 @@ class Property extends Model
             ->latestOfMany('fecha_inicio');
     }
 
+    /** @return HasMany<Expense, $this> */
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
@@ -85,6 +93,10 @@ class Property extends Model
      * dueño. Los demás modelos filtran a través de este scope, para que la regla
      * de visibilidad viva en un solo lugar.
      */
+    /**
+     * @param  Builder<Property>  $query
+     * @return Builder<Property>
+     */
     public function scopeVisiblePara(Builder $query, User $user): Builder
     {
         if ($user->esAdmin()) {
@@ -93,7 +105,7 @@ class Property extends Model
 
         return $query->whereHas(
             'owners',
-            fn (Builder $q) => $q->where('owners.user_id', $user->id)
+            fn ($q) => $q->where('owners.user_id', $user->id)
         );
     }
 

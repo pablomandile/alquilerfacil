@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $rent_charge_id
  * @property CarbonInterface $fecha
- * @property string $monto
+ * @property numeric-string $monto
  * @property MedioPago $medio
  * @property string|null $referencia
  * @property-read RentCharge $rentCharge
@@ -53,21 +53,27 @@ class Payment extends Model
         static::deleted($sincronizar);
     }
 
+    /** @return BelongsTo<RentCharge, $this> */
     public function rentCharge(): BelongsTo
     {
         return $this->belongsTo(RentCharge::class);
     }
 
-    /** @see Property::scopeVisiblePara() */
+    /**
+     * @see Property::scopeVisiblePara()
+     *
+     * @param  Builder<Payment>  $query
+     * @return Builder<Payment>
+     */
     public function scopeVisiblePara(Builder $query, User $user): Builder
     {
         if ($user->esAdmin()) {
             return $query;
         }
 
-        return $query->whereHas(
-            'rentCharge',
-            fn (Builder $q) => $q->visiblePara($user)
+        return $query->whereIn(
+            'rent_charge_id',
+            RentCharge::query()->visiblePara($user)->select('id')
         );
     }
 }

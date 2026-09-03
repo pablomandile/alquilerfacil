@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $notas
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
+ * @property-read PropertyOwner $pivot  Sólo cuando se lo carga a través de Property::owners().
  */
 #[Fillable([
     'user_id', 'nombre', 'tipo_documento', 'documento',
@@ -44,19 +45,26 @@ class Owner extends Model
         ];
     }
 
-    /** Cuenta de acceso, si este propietario entra a la app. Puede no tener. */
+    /**
+     * Cuenta de acceso, si este propietario entra a la app. Puede no tener.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsToMany<Property, $this, PropertyOwner, 'pivot'> */
     public function properties(): BelongsToMany
     {
         return $this->belongsToMany(Property::class, 'property_owner')
+            ->using(PropertyOwner::class)
             ->withPivot('porcentaje')
             ->withTimestamps();
     }
 
+    /** @return HasMany<OwnerShare, $this> */
     public function shares(): HasMany
     {
         return $this->hasMany(OwnerShare::class);

@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property int $id
  * @property int $contract_id
  * @property CarbonInterface $periodo
- * @property string $monto
+ * @property numeric-string $monto
  * @property CarbonInterface $vencimiento
  * @property EstadoCargo $estado
  * @property-read Contract $contract
@@ -45,17 +45,23 @@ class RentCharge extends Model implements Repartible
         ];
     }
 
+    /** @return BelongsTo<Contract, $this> */
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
     }
 
+    /** @return HasMany<Payment, $this> */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class)->orderBy('fecha');
     }
 
-    /** El reparto del alquiler entre los dueños de la propiedad. */
+    /**
+     * El reparto del alquiler entre los dueños de la propiedad.
+     *
+     * @return MorphMany<OwnerShare, covariant Model>
+     */
     public function shares(): MorphMany
     {
         return $this->morphMany(OwnerShare::class, 'shareable');
@@ -66,34 +72,46 @@ class RentCharge extends Model implements Repartible
         return $this->contract->property;
     }
 
+    /** @return numeric-string */
     public function montoARepartir(): string
     {
-        return (string) $this->monto;
+        return $this->monto;
     }
 
-    /** @see Property::scopeVisiblePara() */
+    /**
+     * @see Property::scopeVisiblePara()
+     *
+     * @param  Builder<RentCharge>  $query
+     * @return Builder<RentCharge>
+     */
     public function scopeVisiblePara(Builder $query, User $user): Builder
     {
         if ($user->esAdmin()) {
             return $query;
         }
 
-        return $query->whereHas(
-            'contract',
-            fn (Builder $q) => $q->visiblePara($user)
+        return $query->whereIn(
+            'contract_id',
+            Contract::query()->visiblePara($user)->select('id')
         );
     }
 
+    /**
+     * @param  Builder<RentCharge>  $query
+     * @return Builder<RentCharge>
+     */
     public function scopeDelPeriodo(Builder $query, CarbonInterface $periodo): Builder
     {
         return $query->whereDate('periodo', $periodo->copy()->startOfMonth());
     }
 
+    /** @return numeric-string */
     public function totalPagado(): string
     {
-        return (string) $this->payments()->sum('monto');
+        return bcadd((string) $this->payments()->sum('monto'), '0', 2);
     }
 
+    /** @return numeric-string */
     public function saldo(): string
     {
         return bcsub($this->monto, $this->totalPagado(), 2);

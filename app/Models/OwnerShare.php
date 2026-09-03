@@ -19,8 +19,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $shareable_type
  * @property int $shareable_id
  * @property int $owner_id
- * @property string $porcentaje
- * @property string $monto
+ * @property numeric-string $porcentaje
+ * @property numeric-string $monto
  * @property-read Owner $owner
  */
 #[Fillable(['shareable_type', 'shareable_id', 'owner_id', 'porcentaje', 'monto'])]
@@ -34,16 +34,22 @@ class OwnerShare extends Model
         ];
     }
 
+    /** @return MorphTo<Model, $this> */
     public function shareable(): MorphTo
     {
         return $this->morphTo();
     }
 
+    /** @return BelongsTo<Owner, $this> */
     public function owner(): BelongsTo
     {
         return $this->belongsTo(Owner::class);
     }
 
+    /**
+     * @param  Builder<OwnerShare>  $query
+     * @return Builder<OwnerShare>
+     */
     public function scopeDelPropietario(Builder $query, Owner $owner): Builder
     {
         return $query->where('owner_id', $owner->id);

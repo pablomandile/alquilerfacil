@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum EstadoAjuste: string
+enum EstadoAjuste: string implements Etiquetable
 {
     case Propuesto = 'propuesto';
     case Aplicado = 'aplicado';

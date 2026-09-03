@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum TipoPropiedad: string
+enum TipoPropiedad: string implements Etiquetable
 {
     case Departamento = 'departamento';
     case Casa = 'casa';

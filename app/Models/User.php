@@ -55,7 +55,11 @@ class User extends Authenticatable implements PasskeyUser
         ];
     }
 
-    /** La ficha de propietario asociada a este usuario, si es un dueño. */
+    /**
+     * La ficha de propietario asociada a este usuario, si es un dueño.
+     *
+     * @return HasOne<Owner, $this>
+     */
     public function owner(): HasOne
     {
         return $this->hasOne(Owner::class);

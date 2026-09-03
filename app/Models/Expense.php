@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property CategoriaGasto $categoria
  * @property string|null $descripcion
  * @property CarbonInterface $periodo
- * @property string $monto
+ * @property numeric-string $monto
  * @property CarbonInterface|null $vencimiento
  * @property ACargoDe $a_cargo_de
  * @property bool $pagado
@@ -55,17 +55,23 @@ class Expense extends Model implements Repartible
         ];
     }
 
+    /** @return BelongsTo<Property, $this> */
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
     }
 
+    /** @return BelongsTo<Contract, $this> */
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
     }
 
-    /** El reparto entre dueños. Sólo existe si el gasto está a cargo de ellos. */
+    /**
+     * El reparto entre dueños. Sólo existe si el gasto está a cargo de ellos.
+     *
+     * @return MorphMany<OwnerShare, covariant Model>
+     */
     public function shares(): MorphMany
     {
         return $this->morphMany(OwnerShare::class, 'shareable');
@@ -76,29 +82,43 @@ class Expense extends Model implements Repartible
         return $this->property;
     }
 
+    /** @return numeric-string */
     public function montoARepartir(): string
     {
-        return (string) $this->monto;
+        return $this->monto;
     }
 
-    /** @see Property::scopeVisiblePara() */
+    /**
+     * @see Property::scopeVisiblePara()
+     *
+     * @param  Builder<Expense>  $query
+     * @return Builder<Expense>
+     */
     public function scopeVisiblePara(Builder $query, User $user): Builder
     {
         if ($user->esAdmin()) {
             return $query;
         }
 
-        return $query->whereHas(
-            'property',
-            fn (Builder $q) => $q->visiblePara($user)
+        return $query->whereIn(
+            'property_id',
+            Property::query()->visiblePara($user)->select('id')
         );
     }
 
+    /**
+     * @param  Builder<Expense>  $query
+     * @return Builder<Expense>
+     */
     public function scopeImpagos(Builder $query): Builder
     {
         return $query->where('pagado', false);
     }
 
+    /**
+     * @param  Builder<Expense>  $query
+     * @return Builder<Expense>
+     */
     public function scopeACargoDeLosPropietarios(Builder $query): Builder
     {
         return $query->where('a_cargo_de', ACargoDe::Propietarios);

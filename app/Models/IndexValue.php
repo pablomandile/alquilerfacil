@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\Date;
  * @property int $id
  * @property Indice $fuente
  * @property CarbonInterface $fecha
- * @property string $valor
- * @property string|null $variacion_mensual
+ * @property numeric-string $valor
+ * @property numeric-string|null $variacion_mensual
  * @property CarbonInterface|null $sincronizado_at
  */
 #[Fillable(['fuente', 'fecha', 'valor', 'variacion_mensual', 'sincronizado_at'])]
@@ -39,6 +39,10 @@ class IndexValue extends Model
         ];
     }
 
+    /**
+     * @param  Builder<IndexValue>  $query
+     * @return Builder<IndexValue>
+     */
     public function scopeDe(Builder $query, Indice $fuente): Builder
     {
         return $query->where('fuente', $fuente);

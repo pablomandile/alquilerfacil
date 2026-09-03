@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Enums\Etiquetable;
+
 /**
  * Convierte los enums del dominio en opciones para los selects del front.
  *
@@ -11,15 +13,15 @@ namespace App\Support;
 class Opciones
 {
     /**
-     * @param  class-string<\BackedEnum>  $enum
+     * @param  class-string<\BackedEnum&Etiquetable>  $enum
      * @return list<array{value: string, label: string}>
      */
     public static function de(string $enum): array
     {
         return array_map(
-            fn ($caso) => [
-                'value' => $caso->value,
-                'label' => method_exists($caso, 'label') ? $caso->label() : $caso->name,
+            fn (\BackedEnum&Etiquetable $caso) => [
+                'value' => (string) $caso->value,
+                'label' => $caso->label(),
             ],
             $enum::cases(),
         );

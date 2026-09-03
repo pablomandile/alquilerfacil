@@ -6,6 +6,7 @@ use App\Contracts\Repartible;
 use App\Exceptions\RepartoInvalidoException;
 use App\Models\Owner;
 use App\Models\OwnerShare;
+use App\Support\Decimal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -36,10 +37,7 @@ class RepartidorEntreDuenos
             throw RepartoInvalidoException::sinPropietarios($property);
         }
 
-        $suma = $propietarios->reduce(
-            fn (string $acc, Owner $o) => bcadd($acc, (string) $o->pivot->porcentaje, 2),
-            '0'
-        );
+        $suma = Decimal::sumar($propietarios->map(fn (Owner $o) => $o->pivot->porcentaje));
 
         // El ajuste de residuo de abajo corrige centavos de redondeo, no errores de
         // carga. Si los porcentajes no suman 100 hay un problema de datos que tiene
@@ -75,43 +73,40 @@ class RepartidorEntreDuenos
      * El desempate por menor owner_id hace que el reparto sea determinístico: dos
      * corridas sobre los mismos datos dan siempre el mismo resultado.
      *
+     * @param  numeric-string  $monto
      * @param  Collection<int, Owner>  $propietarios
-     * @return list<array{owner_id: int, porcentaje: string, monto: string}>
+     * @return list<array{owner_id: int, porcentaje: numeric-string, monto: numeric-string}>
      */
     private function calcularPartes(string $monto, Collection $propietarios): array
     {
-        $partes = $propietarios
-            // Mayor porcentaje primero y, a igual porcentaje, menor id: así el
-            // residuo cae siempre en el mismo dueño ante los mismos datos.
-            ->sort(fn (Owner $a, Owner $b) => bccomp(
-                (string) $b->pivot->porcentaje,
-                (string) $a->pivot->porcentaje,
-                2
-            ) ?: $a->id <=> $b->id)
-            ->values()
-            ->map(function (Owner $owner) use ($monto) {
-                $porcentaje = (string) $owner->pivot->porcentaje;
+        // Mayor porcentaje primero y, a igual porcentaje, menor id: así el
+        // residuo cae siempre en el mismo dueño ante los mismos datos.
+        $ordenados = $propietarios->sort(fn (Owner $a, Owner $b) => bccomp(
+            $b->pivot->porcentaje,
+            $a->pivot->porcentaje,
+            2
+        ) ?: $a->id <=> $b->id);
 
-                return [
-                    'owner_id' => $owner->id,
-                    'porcentaje' => $porcentaje,
-                    // bcdiv trunca en la escala pedida, no redondea: es justo lo que
-                    // queremos para que nunca se reparta de más.
-                    'monto' => bcdiv(bcmul($monto, $porcentaje, 10), '100', 2),
-                ];
-            })
-            ->all();
+        $partes = [];
+        foreach ($ordenados as $owner) {
+            $porcentaje = $owner->pivot->porcentaje;
 
-        $repartido = array_reduce(
-            $partes,
-            fn (string $acc, array $parte) => bcadd($acc, $parte['monto'], 2),
-            '0'
-        );
+            $partes[] = [
+                'owner_id' => $owner->id,
+                'porcentaje' => $porcentaje,
+                // bcdiv trunca en la escala pedida, no redondea: es justo lo que
+                // queremos para que nunca se reparta de más.
+                'monto' => bcdiv(bcmul($monto, $porcentaje, 10), '100', 2),
+            ];
+        }
 
-        $residuo = bcsub($monto, $repartido, 2);
+        $residuo = bcsub($monto, Decimal::sumar(array_column($partes, 'monto')), 2);
 
         if (bccomp($residuo, '0', 2) !== 0) {
-            $partes[0]['monto'] = bcadd($partes[0]['monto'], $residuo, 2);
+            $partes[0] = [
+                ...$partes[0],
+                'monto' => bcadd($partes[0]['monto'], $residuo, 2),
+            ];
         }
 
         return $partes;

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\MedioPago;
+use App\Models\Payment;
 use App\Models\RentCharge;
 use App\Services\Cobranzas\GeneradorDeCargos;
+use App\Support\Decimal;
 use App\Support\Opciones;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,25 +42,26 @@ class RentChargeController extends Controller
                 'vencimiento' => $c->vencimiento->format('d/m/Y'),
                 'estado' => $c->estado->value,
                 'estado_label' => $c->estado->label(),
-                'pagos' => $c->payments->map(fn ($p) => [
+                'pagos' => $c->payments->map(fn (Payment $p) => [
                     'id' => $p->id,
                     'fecha' => $p->fecha->format('d/m/Y'),
                     'monto' => $p->monto,
                     'medio' => $p->medio->label(),
                     'referencia' => $p->referencia,
-                ]),
+                ])->all(),
             ])
             ->sortBy('propiedad')
-            ->values();
+            ->values()
+            ->all();
 
         return Inertia::render('cobranzas/Index', [
             'cargos' => $cargos,
             'periodo' => $periodo->format('Y-m'),
             'periodoLabel' => $periodo->translatedFormat('F \d\e Y'),
             'totales' => [
-                'facturado' => $cargos->reduce(fn ($a, $c) => bcadd($a, (string) $c['monto'], 2), '0'),
-                'cobrado' => $cargos->reduce(fn ($a, $c) => bcadd($a, $c['pagado'], 2), '0'),
-                'pendiente' => $cargos->reduce(fn ($a, $c) => bcadd($a, $c['saldo'], 2), '0'),
+                'facturado' => Decimal::sumar(array_column($cargos, 'monto')),
+                'cobrado' => Decimal::sumar(array_column($cargos, 'pagado')),
+                'pendiente' => Decimal::sumar(array_column($cargos, 'saldo')),
             ],
             'mediosPago' => Opciones::de(MedioPago::class),
         ]);

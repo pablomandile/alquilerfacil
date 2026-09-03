@@ -27,8 +27,12 @@ class DashboardController extends Controller
             ->with('payments')
             ->get();
 
-        $facturado = $cargos->reduce(fn ($a, $c) => bcadd($a, (string) $c->monto, 2), '0');
-        $cobrado = $cargos->reduce(fn ($a, $c) => bcadd($a, $c->totalPagado(), 2), '0');
+        $facturado = '0';
+        $cobrado = '0';
+        foreach ($cargos as $cargo) {
+            $facturado = bcadd($facturado, $cargo->monto, 2);
+            $cobrado = bcadd($cobrado, $cargo->totalPagado(), 2);
+        }
 
         return Inertia::render('Dashboard', [
             'mes' => $mes->translatedFormat('F \d\e Y'),

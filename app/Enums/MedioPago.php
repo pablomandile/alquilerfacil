@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum MedioPago: string
+enum MedioPago: string implements Etiquetable
 {
     case Transferencia = 'transferencia';
     case Efectivo = 'efectivo';

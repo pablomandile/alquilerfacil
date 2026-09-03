@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum RolUsuario: string
+enum RolUsuario: string implements Etiquetable
 {
     case Admin = 'admin';
     case Propietario = 'propietario';
