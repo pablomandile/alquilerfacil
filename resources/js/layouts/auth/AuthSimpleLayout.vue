@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { home } from '@/routes';
 
 defineProps<{
@@ -20,7 +19,17 @@ defineProps<{
                         :href="home()"
                         class="flex flex-col items-center gap-2 font-medium"
                     >
-                        <AppLogoIcon class="size-20" />
+                        <!-- Fondo blanco fijo (no `bg-card`): el logo lleva el
+                             texto "alquiler" en azul oscuro, que en modo oscuro
+                             se pierde contra el degradado de fondo si no tiene
+                             una superficie clara detrás. -->
+                        <span class="rounded-[28px] bg-white p-4 shadow-sm">
+                            <img
+                                src="/img/logo.webp"
+                                alt="Alquiler Fácil"
+                                class="size-28"
+                            />
+                        </span>
                         <span class="sr-only">{{ title }}</span>
                     </Link>
                     <div class="space-y-2 text-center">
