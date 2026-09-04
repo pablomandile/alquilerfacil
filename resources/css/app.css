@@ -137,12 +137,25 @@
     );
 
     /* Superficie de las tarjetas: casi blanca con un tinte azul apenas visible,
-       para que se despeguen del panel sin competir con el contenido. */
-    --gradient-card: linear-gradient(
-        160deg,
-        hsl(0 0% 100%) 0%,
-        hsl(214 52% 97.5%) 100%
-    );
+       para que se despeguen del panel sin competir con el contenido. Van las dos
+       paradas por separado (y no el gradient armado) porque a la de arriba se le
+       mezcla el color de la tarjeta cuando lleva un `tinte-*`. */
+    --card-desde: hsl(0 0% 100%);
+    --card-hasta: hsl(214 52% 97.5%);
+
+    /* Cuánto del acento entra en el fondo y en el borde de una tarjeta teñida. */
+    --mezcla-fondo: 13%;
+    --mezcla-borde: 36%;
+
+    /* Un color por tarjeta del panel. Se usan tenues de fondo pero a full en el
+       ícono, así que se eligen legibles sobre blanco. */
+    --acento-indigo: hsl(234 62% 52%);
+    --acento-esmeralda: hsl(160 72% 32%);
+    --acento-ambar: hsl(30 90% 44%);
+    --acento-violeta: hsl(268 60% 55%);
+    --acento-rosa: hsl(342 70% 50%);
+    --acento-cielo: hsl(199 84% 40%);
+    --acento-turquesa: hsl(182 64% 32%);
 }
 
 .dark {
@@ -187,11 +200,21 @@
         hsl(222 50% 6%) 100%
     );
 
-    --gradient-card: linear-gradient(
-        160deg,
-        hsl(215 36% 14%) 0%,
-        hsl(219 36% 10%) 100%
-    );
+    --card-desde: hsl(215 36% 14%);
+    --card-hasta: hsl(219 36% 10%);
+
+    /* Sobre el fondo oscuro el mismo porcentaje casi no se ve: entra bastante
+       más color en el fondo que en claro. */
+    --mezcla-fondo: 26%;
+    --mezcla-borde: 38%;
+
+    --acento-indigo: hsl(232 88% 76%);
+    --acento-esmeralda: hsl(158 64% 58%);
+    --acento-ambar: hsl(38 94% 64%);
+    --acento-violeta: hsl(266 84% 78%);
+    --acento-rosa: hsl(346 82% 72%);
+    --acento-cielo: hsl(199 88% 66%);
+    --acento-turquesa: hsl(177 64% 58%);
 }
 
 @layer base {
@@ -208,6 +231,107 @@
     }
 }
 
+/*
+ * Superficie de las tarjetas. Sola queda el gris azulado neutro de siempre; con
+ * un `tinte-*` al lado, a la parada de arriba se le mezcla ese color.
+ *
+ * El `color-mix` con `transparent 0%` devuelve la parada de base tal cual, así
+ * que la tarjeta sin tinte no necesita una regla aparte. Por eso `--tinte-fondo`
+ * lo setea el `tinte-*` y no el tema: si viviera en `:root` estaría siempre
+ * definido y el 0% del fallback nunca entraría (la tarjeta neutra terminaría
+ * traslúcida).
+ */
 @utility tarjeta {
-    background-image: var(--gradient-card);
+    background-image: linear-gradient(
+        160deg,
+        color-mix(
+                in oklab,
+                var(--tinte, transparent) var(--tinte-fondo, 0%),
+                var(--card-desde)
+            )
+            0%,
+        var(--card-hasta) 100%
+    );
+}
+
+/*
+ * Un color por tarjeta del panel. Cada uno pinta el fondo, el borde y —vía
+ * `icono-tarjeta`— el ícono. Van con el borde adentro, así que la tarjeta que
+ * los usa no lleva las clases `border-sidebar-border/70 dark:border-sidebar-border`:
+ * dos utilidades peleando por `border-color` dependerían del orden del bundle.
+ */
+@utility tinte-indigo {
+    --tinte: var(--acento-indigo);
+    --tinte-fondo: var(--mezcla-fondo);
+    border-color: color-mix(
+        in oklab,
+        var(--tinte) var(--mezcla-borde),
+        var(--sidebar-border)
+    );
+}
+
+@utility tinte-esmeralda {
+    --tinte: var(--acento-esmeralda);
+    --tinte-fondo: var(--mezcla-fondo);
+    border-color: color-mix(
+        in oklab,
+        var(--tinte) var(--mezcla-borde),
+        var(--sidebar-border)
+    );
+}
+
+@utility tinte-ambar {
+    --tinte: var(--acento-ambar);
+    --tinte-fondo: var(--mezcla-fondo);
+    border-color: color-mix(
+        in oklab,
+        var(--tinte) var(--mezcla-borde),
+        var(--sidebar-border)
+    );
+}
+
+@utility tinte-violeta {
+    --tinte: var(--acento-violeta);
+    --tinte-fondo: var(--mezcla-fondo);
+    border-color: color-mix(
+        in oklab,
+        var(--tinte) var(--mezcla-borde),
+        var(--sidebar-border)
+    );
+}
+
+@utility tinte-rosa {
+    --tinte: var(--acento-rosa);
+    --tinte-fondo: var(--mezcla-fondo);
+    border-color: color-mix(
+        in oklab,
+        var(--tinte) var(--mezcla-borde),
+        var(--sidebar-border)
+    );
+}
+
+@utility tinte-cielo {
+    --tinte: var(--acento-cielo);
+    --tinte-fondo: var(--mezcla-fondo);
+    border-color: color-mix(
+        in oklab,
+        var(--tinte) var(--mezcla-borde),
+        var(--sidebar-border)
+    );
+}
+
+@utility tinte-turquesa {
+    --tinte: var(--acento-turquesa);
+    --tinte-fondo: var(--mezcla-fondo);
+    border-color: color-mix(
+        in oklab,
+        var(--tinte) var(--mezcla-borde),
+        var(--sidebar-border)
+    );
+}
+
+/* El ícono de la tarjeta toma su color; sin tinte, el gris de siempre. */
+@utility icono-tarjeta {
+    color: var(--tinte, var(--muted-foreground));
+    opacity: 0.75;
 }

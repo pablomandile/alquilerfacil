@@ -82,12 +82,14 @@ defineProps<{
                 :valor="pesosRedondos(cobranza.facturado)"
                 :detalle="`${cobranza.cargos} cargos emitidos`"
                 :icono="Wallet"
+                tinte="indigo"
             />
             <StatCard
                 etiqueta="Cobrado"
                 :valor="pesosRedondos(cobranza.cobrado)"
                 acento="positivo"
                 :icono="Wallet"
+                tinte="esmeralda"
             />
             <StatCard
                 etiqueta="Pendiente de cobro"
@@ -99,20 +101,20 @@ defineProps<{
                         : undefined
                 "
                 :icono="CalendarClock"
+                tinte="ambar"
             />
             <StatCard
                 etiqueta="Ajustes para revisar"
                 :valor="resumen.ajustes_propuestos"
                 :acento="resumen.ajustes_propuestos > 0 ? 'atencion' : 'normal'"
                 :icono="TrendingUp"
+                tinte="violeta"
             />
         </div>
 
         <div class="grid gap-4 lg:grid-cols-2">
             <!-- Ajustes que ya están en fecha -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border"
-            >
+            <section class="tarjeta tinte-violeta rounded-xl border">
                 <header
                     class="flex items-center justify-between border-b px-4 py-3"
                 >
@@ -148,9 +150,7 @@ defineProps<{
             </section>
 
             <!-- Gastos impagos -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border"
-            >
+            <section class="tarjeta tinte-rosa rounded-xl border">
                 <header
                     class="flex items-center justify-between border-b px-4 py-3"
                 >
@@ -199,21 +199,22 @@ defineProps<{
                 etiqueta="Propiedades"
                 :valor="resumen.propiedades"
                 :icono="Building2"
+                tinte="cielo"
             />
             <StatCard
                 etiqueta="Contratos activos"
                 :valor="resumen.contratos_activos"
                 :icono="FileText"
+                tinte="indigo"
             />
             <StatCard
                 etiqueta="Gastos impagos"
                 :valor="resumen.gastos_impagos"
                 :acento="resumen.gastos_impagos > 0 ? 'atencion' : 'normal'"
                 :icono="Receipt"
+                tinte="rosa"
             />
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
-            >
+            <div class="tarjeta tinte-turquesa rounded-xl border p-4">
                 <p class="text-muted-foreground text-sm">Último índice</p>
                 <ul class="mt-2 space-y-1.5">
                     <li

@@ -141,16 +141,19 @@ function borrarPago(id: number) {
             <StatCard
                 etiqueta="Facturado"
                 :valor="pesosRedondos(totales.facturado)"
+                tinte="indigo"
             />
             <StatCard
                 etiqueta="Cobrado"
                 :valor="pesosRedondos(totales.cobrado)"
                 acento="positivo"
+                tinte="esmeralda"
             />
             <StatCard
                 etiqueta="Pendiente"
                 :valor="pesosRedondos(totales.pendiente)"
                 :acento="Number(totales.pendiente) > 0 ? 'atencion' : 'normal'"
+                tinte="ambar"
             />
         </div>
 
