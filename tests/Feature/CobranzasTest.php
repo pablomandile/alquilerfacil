@@ -7,6 +7,7 @@ use App\Models\Contract;
 use App\Models\Owner;
 use App\Models\Payment;
 use App\Models\Property;
+use App\Models\RentAdjustment;
 use App\Models\RentCharge;
 use App\Services\Cobranzas\GeneradorDeCargos;
 use App\Services\Repartos\RepartidorEntreDuenos;
@@ -87,6 +88,88 @@ class CobranzasTest extends TestCase
 
         $this->assertSame(1, $contrato->charges()->count());
         $this->assertFalse($segunda->first()->nuevo);
+    }
+
+    /**
+     * El caso reportado: con un ajuste ya aplicado, emitir el cargo de un mes
+     * ANTERIOR a esa vigencia no puede cobrar el monto de hoy.
+     */
+    public function test_emite_el_cargo_de_un_mes_anterior_al_ajuste_con_el_monto_de_ese_mes(): void
+    {
+        $contrato = $this->contratoCon([100], 500000);
+
+        RentAdjustment::factory()->aplicado()->create([
+            'contract_id' => $contrato->id,
+            'vigencia_desde' => Date::parse('2026-07-01'),
+            'monto_anterior' => 500000,
+            'monto_nuevo' => 550000,
+        ]);
+        $contrato->update(['monto_actual' => 550000]);
+
+        $this->generador->generar(Date::parse('2026-03-01'));
+
+        $cargo = $contrato->charges()->delPeriodo(Date::parse('2026-03-01'))->first();
+        $this->assertSame('500000.00', (string) $cargo->monto);
+    }
+
+    public function test_emite_el_cargo_del_mes_en_que_empieza_a_regir_el_ajuste_con_el_monto_nuevo(): void
+    {
+        $contrato = $this->contratoCon([100], 500000);
+
+        RentAdjustment::factory()->aplicado()->create([
+            'contract_id' => $contrato->id,
+            'vigencia_desde' => Date::parse('2026-07-01'),
+            'monto_anterior' => 500000,
+            'monto_nuevo' => 550000,
+        ]);
+        $contrato->update(['monto_actual' => 550000]);
+
+        $this->generador->generar(Date::parse('2026-07-01'));
+
+        $cargo = $contrato->charges()->delPeriodo(Date::parse('2026-07-01'))->first();
+        $this->assertSame('550000.00', (string) $cargo->monto);
+    }
+
+    /** Un ajuste todavía propuesto (no aplicado) no puede cobrarse: no es firme. */
+    public function test_ignora_los_ajustes_propuestos_no_aplicados_todavia(): void
+    {
+        $contrato = $this->contratoCon([100], 500000);
+
+        RentAdjustment::factory()->create([
+            'contract_id' => $contrato->id,
+            'vigencia_desde' => Date::parse('2026-07-01'),
+            'monto_anterior' => 500000,
+            'monto_nuevo' => 550000,
+        ]);
+
+        $this->generador->generar(Date::parse('2026-09-01'));
+
+        $cargo = $contrato->charges()->delPeriodo(Date::parse('2026-09-01'))->first();
+        $this->assertSame('500000.00', (string) $cargo->monto);
+    }
+
+    public function test_con_varios_ajustes_aplicados_usa_el_que_corresponde_a_ese_mes(): void
+    {
+        $contrato = $this->contratoCon([100], 500000);
+
+        RentAdjustment::factory()->aplicado()->create([
+            'contract_id' => $contrato->id,
+            'vigencia_desde' => Date::parse('2026-04-01'),
+            'monto_anterior' => 500000,
+            'monto_nuevo' => 530000,
+        ]);
+        RentAdjustment::factory()->aplicado()->create([
+            'contract_id' => $contrato->id,
+            'vigencia_desde' => Date::parse('2026-07-01'),
+            'monto_anterior' => 530000,
+            'monto_nuevo' => 560000,
+        ]);
+        $contrato->update(['monto_actual' => 560000]);
+
+        $this->generador->generar(Date::parse('2026-05-01'));
+
+        $cargo = $contrato->charges()->delPeriodo(Date::parse('2026-05-01'))->first();
+        $this->assertSame('530000.00', (string) $cargo->monto);
     }
 
     public function test_recorta_el_vencimiento_al_ultimo_dia_del_mes(): void

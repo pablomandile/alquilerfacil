@@ -41,7 +41,7 @@ class GeneradorDeCargos
             // cargo en este período.
             ->whereDate('fecha_inicio', '<=', $periodo->copy()->endOfMonth())
             ->whereDate('fecha_fin', '>=', $periodo)
-            ->with('property.owners')
+            ->with(['property.owners', 'adjustments'])
             ->get()
             ->map(fn (Contract $contract) => $this->generarPara($contract, $periodo));
     }
@@ -63,9 +63,11 @@ class GeneradorDeCargos
             $cargo = DB::transaction(function () use ($contract, $periodo) {
                 $cargo = RentCharge::query()->create([
                     'contract_id' => $contract->id,
-                    // Se congela el monto vigente: si más adelante se aplica un
-                    // ajuste, los cargos ya emitidos no cambian.
-                    'monto' => $contract->monto_actual,
+                    // El monto que regía ESE período (no necesariamente el
+                    // actual: emitir el cargo de un mes anterior a un ajuste
+                    // ya aplicado no puede cobrar de más). Una vez creado el
+                    // cargo queda congelado: un ajuste posterior no lo toca.
+                    'monto' => $contract->montoVigenteEn($periodo),
                     'periodo' => $periodo,
                     'vencimiento' => $this->vencimiento($contract, $periodo),
                 ]);

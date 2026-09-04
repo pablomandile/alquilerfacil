@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoAjuste;
 use App\Enums\EstadoContrato;
 use App\Enums\Indice;
 use Carbon\CarbonInterface;
@@ -150,5 +151,27 @@ class Contract extends Model
     {
         return $this->estado === EstadoContrato::Activo
             && $this->fecha_fin->isFuture();
+    }
+
+    /**
+     * El alquiler que estaba vigente durante un período dado, reconstruido a
+     * partir del historial de ajustes aplicados (`monto_actual` sólo dice el
+     * de HOY). Emitir el cargo de un mes anterior a un ajuste ya aplicado
+     * tiene que cobrar lo que regía ese mes, no lo de ahora.
+     *
+     * @return numeric-string
+     */
+    public function montoVigenteEn(CarbonInterface $periodo): string
+    {
+        $periodo = $periodo->copy()->startOfMonth();
+
+        // `adjustments` ya viene ordenado por vigencia_desde descendente, así
+        // que el primero que aplica es el más reciente de los que corresponden.
+        $ultimoAplicado = $this->adjustments->first(
+            fn (RentAdjustment $a) => $a->estado === EstadoAjuste::Aplicado
+                && $a->vigencia_desde->lte($periodo)
+        );
+
+        return $ultimoAplicado->monto_nuevo ?? $this->monto_base;
     }
 }
