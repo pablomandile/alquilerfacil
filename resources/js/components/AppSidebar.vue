@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import {
     Building2,
     FileText,
@@ -11,7 +11,7 @@ import {
     Wallet,
     PieChart,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, onUnmounted } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -23,6 +23,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import rutasAjustes from '@/routes/ajustes';
@@ -39,6 +40,21 @@ import type { NavItem } from '@/types';
 const page = usePage();
 const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
+
+/* En mobile el menú es un Sheet que se abre por encima de la página. Inertia
+   navega sin recargar el documento, así que nada lo cierra solo: sin esto,
+   elegir un ítem deja el menú tapando la pantalla nueva. Sólo en mobile: en
+   escritorio la sidebar es fija y cerrarla sería quedarse sin menú. `navigate`
+   y no `start`, para no cerrarlo antes de que la navegación haya llegado. */
+const { isMobile, setOpenMobile } = useSidebar();
+
+onUnmounted(
+    router.on('navigate', () => {
+        if (isMobile.value) {
+            setOpenMobile(false);
+        }
+    }),
+);
 
 const gestion: NavItem[] = [
     { title: 'Panel', href: dashboard(), icon: LayoutGrid },
