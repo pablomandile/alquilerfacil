@@ -110,6 +110,10 @@ function registrarPago() {
 function borrarPago(id: number) {
     router.delete(rutasPagos.destroy(id).url, { preserveScroll: true });
 }
+
+function borrarCargo(id: number) {
+    router.delete(rutasCobranzas.destroy(id).url, { preserveScroll: true });
+}
 </script>
 
 <template>
@@ -213,6 +217,18 @@ function borrarPago(id: number) {
                         >
                             <Plus class="size-4" />
                             Pago
+                        </Button>
+                        <!-- Sólo si no tiene pagos: uno con plata registrada no
+                             se borra por acá, primero hay que borrar el pago. -->
+                        <Button
+                            v-if="puedeGestionar && !cargo.pagos.length"
+                            size="icon"
+                            variant="ghost"
+                            class="size-8 shrink-0"
+                            @click="borrarCargo(cargo.id)"
+                        >
+                            <Trash2 class="size-4" />
+                            <span class="sr-only">Borrar cargo</span>
                         </Button>
                     </div>
                 </div>

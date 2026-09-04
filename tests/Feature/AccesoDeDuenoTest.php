@@ -191,6 +191,53 @@ class AccesoDeDuenoTest extends TestCase
         $this->delete(route('gastos.destroy', $gastoAjeno))->assertForbidden();
         $this->get(route('contratos.edit', $contratoAjeno))->assertForbidden();
         $this->post(route('pagos.store', $cargoAjeno), [])->assertForbidden();
+        $this->delete(route('cobranzas.destroy', $cargoAjeno))->assertForbidden();
+    }
+
+    public function test_el_copropietario_borra_un_cargo_sin_pagos(): void
+    {
+        $contrato = Contract::factory()->create(['property_id' => $this->suya->id]);
+        $cargo = RentCharge::factory()->create(['contract_id' => $contrato->id]);
+
+        $this->actingAs($this->duenio)
+            ->delete(route('cobranzas.destroy', $cargo))
+            ->assertRedirect();
+
+        $this->assertModelMissing($cargo);
+    }
+
+    public function test_no_se_puede_borrar_un_cargo_con_pagos_registrados(): void
+    {
+        $contrato = Contract::factory()->create(['property_id' => $this->suya->id]);
+        $cargo = RentCharge::factory()->create(['contract_id' => $contrato->id]);
+        $cargo->payments()->create([
+            'fecha' => today(),
+            'monto' => 1000,
+            'medio' => 'transferencia',
+        ]);
+
+        $this->actingAs($this->duenio)
+            ->delete(route('cobranzas.destroy', $cargo))
+            ->assertRedirect();
+
+        $this->assertModelExists($cargo);
+    }
+
+    /** Borrar un cargo generado (con reparto entre dueños) no deja repartos huérfanos. */
+    public function test_borrar_un_cargo_borra_tambien_su_reparto(): void
+    {
+        Contract::factory()->create(['property_id' => $this->suya->id]);
+
+        $this->actingAs($this->admin)->post(route('cobranzas.generar'));
+
+        $cargo = RentCharge::query()->sole();
+        $this->assertSame(1, $cargo->shares()->count());
+
+        $this->actingAs($this->admin)
+            ->delete(route('cobranzas.destroy', $cargo))
+            ->assertRedirect();
+
+        $this->assertDatabaseCount('owner_shares', 0);
     }
 
     public function test_el_copropietario_carga_un_gasto_extraordinario_y_se_reparte(): void

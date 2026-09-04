@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\RentCharge;
 use App\Models\User;
 
 class RentChargePolicy
@@ -18,5 +19,10 @@ class RentChargePolicy
     public function generar(User $user): bool
     {
         return $user->gestionaAlgunaPropiedad();
+    }
+
+    public function delete(User $user, RentCharge $charge): bool
+    {
+        return $user->puedeGestionar($charge->contract->property);
     }
 }

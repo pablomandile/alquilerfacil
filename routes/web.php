@@ -98,6 +98,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Cobranzas
     Route::post('cobranzas/generar', [RentChargeController::class, 'generar'])
         ->name('cobranzas.generar');
+    Route::delete('cobranzas/{charge}', [RentChargeController::class, 'destroy'])
+        ->name('cobranzas.destroy');
     Route::post('cobranzas/{charge}/pagos', [PaymentController::class, 'store'])
         ->name('pagos.store');
     Route::delete('pagos/{payment}', [PaymentController::class, 'destroy'])

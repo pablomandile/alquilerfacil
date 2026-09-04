@@ -94,4 +94,18 @@ class RentChargeController extends Controller
                 : "Se emitieron {$nuevos} cargos."
         );
     }
+
+    public function destroy(RentCharge $charge): RedirectResponse
+    {
+        $this->authorize('delete', $charge);
+
+        if ($charge->payments()->exists()) {
+            return back()->with('error', 'No se puede borrar: el cargo tiene pagos registrados. Borrá el pago primero.');
+        }
+
+        $charge->shares()->delete();
+        $charge->delete();
+
+        return back()->with('success', 'Cargo eliminado.');
+    }
 }
