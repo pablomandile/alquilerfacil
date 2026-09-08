@@ -139,7 +139,7 @@ class FichaDePropiedadTest extends TestCase
             );
     }
 
-    public function test_si_hay_cargo_emitido_el_alquiler_usa_su_saldo(): void
+    public function test_si_hay_cargo_emitido_el_alquiler_usa_su_monto_congelado(): void
     {
         $admin = User::factory()->admin()->create();
         $propiedad = Property::factory()->create();
@@ -157,9 +157,30 @@ class FichaDePropiedadTest extends TestCase
             ->get(route('propiedades.show', $propiedad))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                // Monto congelado del cargo, menos lo ya pagado.
-                ->where('mensajeInquilino.alquiler.monto', '290000.00')
+                // Siempre el monto del alquiler, aunque haya un pago parcial.
+                ->where('mensajeInquilino.alquiler.monto', '490000.00')
                 ->where('mensajeInquilino.alquiler.pagado', false)
+            );
+    }
+
+    public function test_el_alquiler_ya_cobrado_muestra_el_monto_y_queda_marcado_pagado(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $propiedad = Property::factory()->create();
+        $contrato = Contract::factory()->create(['property_id' => $propiedad->id]);
+
+        $cargo = RentCharge::factory()->conMonto(490000)->create([
+            'contract_id' => $contrato->id,
+            'periodo' => today()->startOfMonth(),
+        ]);
+        Payment::factory()->de(490000)->create(['rent_charge_id' => $cargo->id]);
+
+        $this->actingAs($admin)
+            ->get(route('propiedades.show', $propiedad))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('mensajeInquilino.alquiler.monto', '490000.00')
+                ->where('mensajeInquilino.alquiler.pagado', true)
             );
     }
 

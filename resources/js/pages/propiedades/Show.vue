@@ -208,10 +208,6 @@ const itemsPendientes = computed(() =>
     itemsDelMes.value.filter((i) => !i.pagado),
 );
 
-const totalDelMes = computed(() =>
-    itemsDelMes.value.reduce((suma, i) => suma + Number(i.monto), 0),
-);
-
 const totalPendiente = computed(() =>
     itemsPendientes.value.reduce((suma, i) => suma + Number(i.monto), 0),
 );
@@ -226,6 +222,7 @@ const textoMensaje = computed(() => {
         return `Hola ${nombre}, este mes no tenés nada pendiente. ¡Gracias!`;
     }
 
+    const conAlquiler = itemsPendientes.value.includes(m.alquiler);
     const lineas = itemsPendientes.value.map(
         (i) =>
             `• ${i.concepto} — ${pesos(i.monto)}` +
@@ -233,7 +230,7 @@ const textoMensaje = computed(() => {
     );
 
     return [
-        `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
+        `Hola ${nombre}, te paso ${conAlquiler ? 'el alquiler y los gastos' : 'los gastos'} de este mes:`,
         '',
         ...lineas,
         '',
@@ -531,11 +528,11 @@ const linkWhatsapp = computed(() => {
                     </tbody>
                     <tfoot class="border-t">
                         <tr class="font-semibold">
-                            <td class="px-4 py-2" colspan="2">Total</td>
+                            <td class="px-4 py-2" colspan="2">Total a pagar</td>
                             <td
                                 class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
-                                {{ pesos(totalDelMes) }}
+                                {{ pesos(totalPendiente) }}
                             </td>
                             <td></td>
                         </tr>

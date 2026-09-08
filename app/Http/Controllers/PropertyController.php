@@ -284,28 +284,29 @@ class PropertyController extends Controller
     {
         $mes = now()->startOfMonth();
 
-        // El cargo del mes si ya está emitido: tiene el monto congelado, su
-        // vencimiento y lo que falta pagar. Si no, se usa el alquiler actual y
-        // el día de vencimiento del contrato.
+        // El cargo del mes si ya está emitido: tiene el monto congelado y su
+        // vencimiento. Si no, se usa el alquiler actual y el día de vencimiento
+        // del contrato. El `monto` es siempre el del alquiler (no el saldo): en
+        // el cuadro se informa cuánto es, y `pagado` dice si ya está saldado.
         $cargo = $contrato->charges()->delPeriodo($mes)->first();
 
         if ($cargo !== null) {
-            $alquiler = [
-                'concepto' => 'Alquiler '.$mes->translatedFormat('F'),
-                'monto' => $cargo->saldo(),
-                'vencimiento' => $cargo->vencimiento->format('d/m/Y'),
-                'pagado' => bccomp($cargo->saldo(), '0', 2) <= 0,
-            ];
+            $montoAlquiler = $cargo->monto;
+            $venceAlquiler = $cargo->vencimiento;
+            $alquilerPagado = bccomp($cargo->saldo(), '0', 2) <= 0;
         } else {
             $dia = min($contrato->dia_vencimiento, $mes->daysInMonth);
-
-            $alquiler = [
-                'concepto' => 'Alquiler '.$mes->translatedFormat('F'),
-                'monto' => $contrato->monto_actual,
-                'vencimiento' => $mes->copy()->day($dia)->format('d/m/Y'),
-                'pagado' => false,
-            ];
+            $montoAlquiler = $contrato->monto_actual;
+            $venceAlquiler = $mes->copy()->day($dia);
+            $alquilerPagado = false;
         }
+
+        $alquiler = [
+            'concepto' => 'Alquiler '.$mes->translatedFormat('F'),
+            'monto' => $montoAlquiler,
+            'vencimiento' => $venceAlquiler->format('d/m/Y'),
+            'pagado' => $alquilerPagado,
+        ];
 
         $gastos = $contrato->property->expenses()
             ->where('a_cargo_de', ACargoDe::Inquilino)
