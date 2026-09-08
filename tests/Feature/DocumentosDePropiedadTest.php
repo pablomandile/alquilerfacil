@@ -98,12 +98,17 @@ class DocumentosDePropiedadTest extends TestCase
         $this->assertTrue(Storage::disk('local')->allFiles() === []);
     }
 
-    public function test_se_descarga_con_el_nombre_original(): void
+    public function test_se_ve_inline_y_se_descarga_con_el_nombre_original(): void
     {
         $doc = $this->subir($this->suya, 'escritura.pdf');
 
-        $this->actingAs($this->admin)
+        $inline = $this->actingAs($this->admin)
             ->get(route('propiedades.documentos.show', $doc))
+            ->assertOk();
+        $this->assertStringStartsWith('inline', (string) $inline->headers->get('content-disposition'));
+
+        $this->actingAs($this->admin)
+            ->get(route('propiedades.documentos.show', [$doc, 'descarga' => 1]))
             ->assertOk()
             ->assertDownload('escritura.pdf');
     }

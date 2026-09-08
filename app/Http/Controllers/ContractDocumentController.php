@@ -3,18 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TipoDocumentoContrato;
+use App\Http\Controllers\Concerns\EntregaArchivoPrivado;
 use App\Models\Contract;
 use App\Models\ContractDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContractDocumentController extends Controller
 {
+    use EntregaArchivoPrivado;
+
     public function store(Request $request, Contract $contract): RedirectResponse
     {
         $this->authorize('create', [ContractDocument::class, $contract]);
@@ -57,11 +59,11 @@ class ContractDocumentController extends Controller
         return back()->with('success', 'Documento subido.');
     }
 
-    public function show(ContractDocument $document): StreamedResponse
+    public function show(Request $request, ContractDocument $document): StreamedResponse
     {
         $this->authorize('view', $document);
 
-        return Storage::disk('local')->download($document->path, $document->nombre_original);
+        return $this->entregarArchivo($request, $document->path, $document->nombre_original);
     }
 
     public function destroy(ContractDocument $document): RedirectResponse

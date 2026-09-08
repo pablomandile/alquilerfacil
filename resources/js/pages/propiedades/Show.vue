@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Download, FileText, Pencil, Trash2, Upload } from '@lucide/vue';
+import { Download, Eye, FileText, Pencil, Trash2, Upload } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import SeguimientoAdministracion from '@/components/SeguimientoAdministracion.vue';
+import VisorArchivo, {
+    type ArchivoVisible,
+} from '@/components/VisorArchivo.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -142,6 +145,20 @@ function borrarDocumento(id: number) {
     router.delete(rutasPropiedadDocumentos.destroy(id).url, {
         preserveScroll: true,
     });
+}
+
+/* Visor a pantalla completa de los documentos. */
+const visor = ref<ArchivoVisible | null>(null);
+
+function verDocumento(d: { id: number; nombre: string; mime: string }) {
+    visor.value = {
+        nombre: d.nombre,
+        mime: d.mime,
+        verUrl: rutasPropiedadDocumentos.show(d.id).url,
+        descargarUrl: rutasPropiedadDocumentos.show(d.id, {
+            query: { descarga: 1 },
+        }).url,
+    };
 }
 </script>
 
@@ -455,7 +472,11 @@ function borrarDocumento(id: number) {
                     class="flex items-center gap-3 px-4 py-3"
                 >
                     <FileText class="text-muted-foreground size-5 shrink-0" />
-                    <div class="min-w-0 flex-1">
+                    <button
+                        type="button"
+                        class="min-w-0 flex-1 text-left"
+                        @click="verDocumento(d)"
+                    >
                         <p class="font-medium">{{ d.tipo_label }}</p>
                         <p class="text-muted-foreground truncate text-xs">
                             {{ d.nombre
@@ -468,14 +489,29 @@ function borrarDocumento(id: number) {
                             >
                             <span v-if="d.fecha"> · {{ d.fecha }}</span>
                         </p>
-                    </div>
+                    </button>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        class="size-8 shrink-0"
+                        @click="verDocumento(d)"
+                    >
+                        <Eye class="size-4" />
+                        <span class="sr-only">Ver</span>
+                    </Button>
                     <Button
                         as-child
                         size="icon"
                         variant="ghost"
                         class="size-8 shrink-0"
                     >
-                        <a :href="rutasPropiedadDocumentos.show(d.id).url">
+                        <a
+                            :href="
+                                rutasPropiedadDocumentos.show(d.id, {
+                                    query: { descarga: 1 },
+                                }).url
+                            "
+                        >
                             <Download class="size-4" />
                             <span class="sr-only">Descargar</span>
                         </a>
@@ -553,4 +589,6 @@ function borrarDocumento(id: number) {
             </div>
         </section>
     </div>
+
+    <VisorArchivo v-model:archivo="visor" />
 </template>

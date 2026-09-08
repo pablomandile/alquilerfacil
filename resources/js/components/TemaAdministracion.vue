@@ -3,6 +3,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import {
     ChevronDown,
     Download,
+    Eye,
     Paperclip,
     RotateCcw,
     Trash2,
@@ -10,6 +11,9 @@ import {
 import { ref } from 'vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
 import InputError from '@/components/InputError.vue';
+import VisorArchivo, {
+    type ArchivoVisible,
+} from '@/components/VisorArchivo.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -103,6 +107,17 @@ function borrarEntrada(id: number) {
 function borrarAdjunto(id: number) {
     router.delete(rutasAdjuntos.destroy(id).url, { preserveScroll: true });
 }
+
+const visor = ref<ArchivoVisible | null>(null);
+
+function verAdjunto(a: Adjunto) {
+    visor.value = {
+        nombre: a.nombre,
+        mime: a.mime,
+        verUrl: rutasAdjuntos.show(a.id).url,
+        descargarUrl: rutasAdjuntos.show(a.id, { query: { descarga: 1 } }).url,
+    };
+}
 </script>
 
 <template>
@@ -166,17 +181,30 @@ function borrarAdjunto(id: number) {
                             <Paperclip
                                 class="text-muted-foreground size-3.5 shrink-0"
                             />
-                            <a
-                                :href="rutasAdjuntos.show(a.id).url"
+                            <button
+                                type="button"
                                 class="truncate hover:underline"
+                                @click="verAdjunto(a)"
                             >
                                 {{ a.nombre }}
-                            </a>
+                            </button>
                             <span class="text-muted-foreground shrink-0">
                                 {{ tamano(a.tamano) }}
                             </span>
+                            <button
+                                type="button"
+                                class="text-muted-foreground hover:text-foreground shrink-0"
+                                @click="verAdjunto(a)"
+                            >
+                                <Eye class="size-3.5" />
+                                <span class="sr-only">Ver</span>
+                            </button>
                             <a
-                                :href="rutasAdjuntos.show(a.id).url"
+                                :href="
+                                    rutasAdjuntos.show(a.id, {
+                                        query: { descarga: 1 },
+                                    }).url
+                                "
                                 class="text-muted-foreground hover:text-foreground shrink-0"
                             >
                                 <Download class="size-3.5" />
@@ -283,5 +311,7 @@ function borrarAdjunto(id: number) {
                 </Button>
             </div>
         </div>
+
+        <VisorArchivo v-model:archivo="visor" />
     </div>
 </template>

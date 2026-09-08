@@ -3,18 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TipoDocumentoPropiedad;
+use App\Http\Controllers\Concerns\EntregaArchivoPrivado;
 use App\Models\Property;
 use App\Models\PropertyDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PropertyDocumentController extends Controller
 {
+    use EntregaArchivoPrivado;
+
     public function store(Request $request, Property $property): RedirectResponse
     {
         $this->authorize('create', [PropertyDocument::class, $property]);
@@ -57,11 +59,11 @@ class PropertyDocumentController extends Controller
         return back()->with('success', 'Documento subido.');
     }
 
-    public function show(PropertyDocument $document): StreamedResponse
+    public function show(Request $request, PropertyDocument $document): StreamedResponse
     {
         $this->authorize('view', $document);
 
-        return Storage::disk('local')->download($document->path, $document->nombre_original);
+        return $this->entregarArchivo($request, $document->path, $document->nombre_original);
     }
 
     public function destroy(PropertyDocument $document): RedirectResponse

@@ -101,12 +101,19 @@ class DocumentosDeContratoTest extends TestCase
         $this->assertTrue(Storage::disk('local')->allFiles() === []);
     }
 
-    public function test_se_descarga_con_el_nombre_original(): void
+    public function test_se_ve_inline_y_se_descarga_con_el_nombre_original(): void
     {
         $doc = $this->subir($this->suyo, 'contrato.pdf');
 
-        $this->actingAs($this->admin)
+        // Por defecto: inline, para el visor.
+        $inline = $this->actingAs($this->admin)
             ->get(route('documentos.show', $doc))
+            ->assertOk();
+        $this->assertStringStartsWith('inline', (string) $inline->headers->get('content-disposition'));
+
+        // Con ?descarga=1: fuerza la bajada.
+        $this->actingAs($this->admin)
+            ->get(route('documentos.show', [$doc, 'descarga' => 1]))
             ->assertOk()
             ->assertDownload('contrato.pdf');
     }

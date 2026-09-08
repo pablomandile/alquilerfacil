@@ -133,13 +133,19 @@ class SeguimientoAdministracionTest extends TestCase
         $this->assertNull($tema->resuelto_at);
     }
 
-    public function test_descarga_un_adjunto_con_su_nombre_y_no_el_ajeno(): void
+    public function test_ve_y_descarga_un_adjunto_pero_no_el_ajeno(): void
     {
         $propio = $this->crearTemaConAdjunto($this->suya, 'carta.pdf');
         $ajeno = $this->crearTemaConAdjunto($this->ajena, 'otra.pdf');
 
-        $this->actingAs($this->duenio)
+        // Por defecto inline (visor); ?descarga=1 fuerza la bajada.
+        $inline = $this->actingAs($this->duenio)
             ->get(route('administracion.adjuntos.show', $propio))
+            ->assertOk();
+        $this->assertStringStartsWith('inline', (string) $inline->headers->get('content-disposition'));
+
+        $this->actingAs($this->duenio)
+            ->get(route('administracion.adjuntos.show', [$propio, 'descarga' => 1]))
             ->assertOk()
             ->assertDownload('carta.pdf');
 

@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\EntregaArchivoPrivado;
 use App\Models\AdminThreadAttachment;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminThreadAttachmentController extends Controller
 {
-    public function show(AdminThreadAttachment $attachment): StreamedResponse
+    use EntregaArchivoPrivado;
+
+    public function show(Request $request, AdminThreadAttachment $attachment): StreamedResponse
     {
         $this->authorize('view', $attachment);
 
-        return Storage::disk('local')->download($attachment->path, $attachment->nombre_original);
+        return $this->entregarArchivo($request, $attachment->path, $attachment->nombre_original);
     }
 
     public function destroy(AdminThreadAttachment $attachment): RedirectResponse
