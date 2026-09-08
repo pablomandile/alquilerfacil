@@ -10,6 +10,7 @@ use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\OwnerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\PropertyDocumentController;
 use App\Http\Controllers\RentAdjustmentController;
 use App\Http\Controllers\RentChargeController;
 use App\Http\Controllers\TenantController;
@@ -80,6 +81,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('documentos.show');
     Route::delete('documentos/{document}', [ContractDocumentController::class, 'destroy'])
         ->name('documentos.destroy');
+
+    // Documentos de la propiedad: la escritura, el reglamento de copropiedad,
+    // planos, impuestos, etc. Mismo criterio de permisos que el contrato.
+    Route::post('propiedades/{property}/documentos', [PropertyDocumentController::class, 'store'])
+        ->whereNumber('property')->name('propiedades.documentos.store');
+    Route::get('propiedades/documentos/{document}', [PropertyDocumentController::class, 'show'])
+        ->whereNumber('document')->name('propiedades.documentos.show');
+    Route::delete('propiedades/documentos/{document}', [PropertyDocumentController::class, 'destroy'])
+        ->whereNumber('document')->name('propiedades.documentos.destroy');
 
     Route::resource('gastos', ExpenseController::class)
         ->parameters(['gastos' => 'expense'])

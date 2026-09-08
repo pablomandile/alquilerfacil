@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
@@ -43,6 +44,17 @@ class Property extends Model
 {
     /** @use HasFactory<PropertyFactory> */
     use HasFactory;
+
+    /**
+     * Al borrar la propiedad se van también sus archivos del disco. Las filas de
+     * `property_documents` caen solas por la foreign key.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Property $property): void {
+            Storage::disk('local')->deleteDirectory("propiedades/{$property->id}");
+        });
+    }
 
     protected function casts(): array
     {
@@ -84,6 +96,12 @@ class Property extends Model
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
+    }
+
+    /** @return HasMany<PropertyDocument, $this> */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(PropertyDocument::class)->latest();
     }
 
     /**

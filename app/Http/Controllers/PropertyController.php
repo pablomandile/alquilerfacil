@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\ACargoDe;
 use App\Enums\EstadoPropiedad;
+use App\Enums\TipoDocumentoPropiedad;
 use App\Enums\TipoGasto;
 use App\Enums\TipoPropiedad;
 use App\Http\Requests\PropertyRequest;
 use App\Models\Contract;
 use App\Models\Owner;
 use App\Models\Property;
+use App\Models\PropertyDocument;
 use App\Support\Opciones;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,6 +65,7 @@ class PropertyController extends Controller
             'contracts.adjustments',
             'contracts.charges.payments',
             'expenses' => fn ($q) => $q->orderByDesc('periodo')->limit(20),
+            'documents.uploader:id,name',
         ]);
 
         // Totalización del alquiler de la propiedad: lo facturado y lo cobrado en
@@ -145,6 +148,17 @@ class PropertyController extends Controller
                     'a_cargo_de' => $g->a_cargo_de->label(),
                     'pagado' => $g->pagado,
                 ]),
+                'documentos' => $property->documents->map(fn (PropertyDocument $d) => [
+                    'id' => $d->id,
+                    'tipo' => $d->tipo->value,
+                    'tipo_label' => $d->tipo->label(),
+                    'nota' => $d->nota,
+                    'nombre' => $d->nombre_original,
+                    'tamano' => $d->tamano,
+                    'mime' => $d->mime,
+                    'subido_por' => $d->uploader?->name,
+                    'fecha' => $d->created_at?->format('d/m/Y'),
+                ]),
                 'totales' => [
                     'por_contrato' => $totalesPorContrato,
                     'facturado' => $facturadoTotal,
@@ -153,6 +167,7 @@ class PropertyController extends Controller
                     'neto' => bcsub($cobradoTotal, $gastosExtraordinarios, 2),
                 ],
             ],
+            'tiposDocumento' => Opciones::de(TipoDocumentoPropiedad::class),
         ]);
     }
 
