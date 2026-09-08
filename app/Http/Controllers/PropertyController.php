@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ACargoDe;
 use App\Enums\EstadoPropiedad;
+use App\Enums\TipoGasto;
 use App\Enums\TipoPropiedad;
 use App\Http\Requests\PropertyRequest;
+use App\Models\Contract;
 use App\Models\Owner;
 use App\Models\Property;
 use App\Support\Opciones;
@@ -58,8 +61,51 @@ class PropertyController extends Controller
             'owners:id,nombre,email,telefono',
             'contracts.tenant:id,nombre',
             'contracts.adjustments',
+            'contracts.charges.payments',
             'expenses' => fn ($q) => $q->orderByDesc('periodo')->limit(20),
         ]);
+
+        // Totalización del alquiler de la propiedad: lo facturado y lo cobrado en
+        // el contrato vigente y en los anteriores, y el neto contra los gastos
+        // extraordinarios que absorben los propietarios.
+        $totalesPorContrato = $property->contracts
+            ->sortByDesc('fecha_inicio')
+            ->values()
+            ->map(function (Contract $contrato) {
+                $facturado = '0';
+                $cobrado = '0';
+
+                foreach ($contrato->charges as $cargo) {
+                    $facturado = bcadd($facturado, $cargo->monto, 2);
+
+                    foreach ($cargo->payments as $pago) {
+                        $cobrado = bcadd($cobrado, $pago->monto, 2);
+                    }
+                }
+
+                return [
+                    'id' => $contrato->id,
+                    'inquilino' => $contrato->tenant->nombre,
+                    'estado' => $contrato->estado->value,
+                    'estado_label' => $contrato->estado->label(),
+                    'facturado' => bcadd($facturado, '0', 2),
+                    'cobrado' => bcadd($cobrado, '0', 2),
+                ];
+            });
+
+        $facturadoTotal = bcadd($totalesPorContrato->reduce(
+            fn (string $acc, array $c) => bcadd($acc, $c['facturado'], 2),
+            '0'
+        ), '0', 2);
+        $cobradoTotal = bcadd($totalesPorContrato->reduce(
+            fn (string $acc, array $c) => bcadd($acc, $c['cobrado'], 2),
+            '0'
+        ), '0', 2);
+
+        $gastosExtraordinarios = bcadd((string) $property->expenses()
+            ->where('tipo', TipoGasto::Extraordinario)
+            ->where('a_cargo_de', ACargoDe::Propietarios)
+            ->sum('monto'), '0', 2);
 
         return Inertia::render('propiedades/Show', [
             'propiedad' => [
@@ -99,6 +145,13 @@ class PropertyController extends Controller
                     'a_cargo_de' => $g->a_cargo_de->label(),
                     'pagado' => $g->pagado,
                 ]),
+                'totales' => [
+                    'por_contrato' => $totalesPorContrato,
+                    'facturado' => $facturadoTotal,
+                    'cobrado' => $cobradoTotal,
+                    'gastos_extraordinarios' => $gastosExtraordinarios,
+                    'neto' => bcsub($cobradoTotal, $gastosExtraordinarios, 2),
+                ],
             ],
         ]);
     }

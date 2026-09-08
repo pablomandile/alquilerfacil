@@ -47,6 +47,20 @@ const props = defineProps<{
             a_cargo_de: string;
             pagado: boolean;
         }>;
+        totales: {
+            por_contrato: Array<{
+                id: number;
+                inquilino: string;
+                estado: string;
+                estado_label: string;
+                facturado: string;
+                cobrado: string;
+            }>;
+            facturado: string;
+            cobrado: string;
+            gastos_extraordinarios: string;
+            neto: string;
+        };
     };
 }>();
 
@@ -219,6 +233,85 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
             <p v-else class="text-muted-foreground text-sm">
                 Esta propiedad todavía no tiene contratos.
             </p>
+        </section>
+
+        <!-- Totales del alquiler: acumulado de todos los contratos y el neto -->
+        <section v-if="propiedad.contratos.length" class="space-y-3">
+            <h2 class="text-sm font-medium">Totales del alquiler</h2>
+
+            <div
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-hidden rounded-xl border"
+            >
+                <ul class="divide-y text-sm">
+                    <li
+                        v-for="c in propiedad.totales.por_contrato"
+                        :key="c.id"
+                        class="px-4 py-3"
+                    >
+                        <div class="flex items-center justify-between gap-3">
+                            <Link
+                                :href="rutasContratos.show(c.id)"
+                                class="truncate font-medium hover:underline"
+                            >
+                                {{ c.inquilino }}
+                            </Link>
+                            <EstadoBadge
+                                :estado="c.estado"
+                                :label="c.estado_label"
+                            />
+                        </div>
+                        <div
+                            class="text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs tabular-nums"
+                        >
+                            <span>Facturado {{ pesos(c.facturado) }}</span>
+                            <span>Cobrado {{ pesos(c.cobrado) }}</span>
+                        </div>
+                    </li>
+                </ul>
+
+                <dl class="space-y-1.5 border-t px-4 py-3 text-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-muted-foreground">Facturado total</dt>
+                        <dd class="tabular-nums">
+                            {{ pesos(propiedad.totales.facturado) }}
+                        </dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-muted-foreground">Cobrado total</dt>
+                        <dd class="tabular-nums">
+                            {{ pesos(propiedad.totales.cobrado) }}
+                        </dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-muted-foreground">
+                            Gastos extraordinarios
+                        </dt>
+                        <dd
+                            class="text-rose-600 tabular-nums dark:text-rose-400"
+                        >
+                            −
+                            {{
+                                pesos(propiedad.totales.gastos_extraordinarios)
+                            }}
+                        </dd>
+                    </div>
+                    <div
+                        class="flex items-center justify-between gap-3 border-t pt-1.5 text-base font-semibold"
+                    >
+                        <dt>Neto</dt>
+                        <dd
+                            class="tabular-nums"
+                            :class="
+                                Number(propiedad.totales.neto) < 0
+                                    ? 'text-rose-600 dark:text-rose-400'
+                                    : ''
+                            "
+                        >
+                            {{ pesos(propiedad.totales.neto) }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
         </section>
 
         <!-- Gastos -->
