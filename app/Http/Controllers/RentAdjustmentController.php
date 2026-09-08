@@ -31,27 +31,38 @@ class RentAdjustmentController extends Controller
                 ->values()
             : collect();
 
-        $ajustes = RentAdjustment::query()
+        $registros = RentAdjustment::query()
             ->visiblePara($request->user())
             ->with(['contract.property:id,alias', 'contract.tenant:id,nombre'])
             ->orderByDesc('vigencia_desde')
-            ->get()
-            ->map(fn (RentAdjustment $a) => [
-                'id' => $a->id,
-                'contrato_id' => $a->contract_id,
-                'propiedad' => $a->contract->property->alias,
-                'inquilino' => $a->contract->tenant->nombre,
-                'vigencia' => $a->vigencia_desde->format('d/m/Y'),
-                'monto_anterior' => $a->monto_anterior,
-                'monto_nuevo' => $a->monto_nuevo,
-                'diferencia' => $a->diferencia(),
-                'variacion' => (float) $a->variacion_porcentual,
-                'indice' => $a->indice->labelCorto(),
-                'ventana' => $a->periodo_indice_desde->format('m/Y').' a '.$a->periodo_indice_hasta->format('m/Y'),
-                'estado' => $a->estado->value,
-                'estado_label' => $a->estado->label(),
-                'notas' => $a->notas,
-            ]);
+            ->get();
+
+        // El último ajuste aplicado de cada contrato admite corregir el importe
+        // (típicamente, para redondear los centavos que dejó la cuenta).
+        $corregibles = $registros
+            ->where('estado', EstadoAjuste::Aplicado)
+            ->sortBy([['vigencia_desde', 'desc'], ['id', 'desc']])
+            ->unique('contract_id')
+            ->pluck('id')
+            ->flip();
+
+        $ajustes = $registros->map(fn (RentAdjustment $a) => [
+            'id' => $a->id,
+            'contrato_id' => $a->contract_id,
+            'propiedad' => $a->contract->property->alias,
+            'inquilino' => $a->contract->tenant->nombre,
+            'vigencia' => $a->vigencia_desde->format('d/m/Y'),
+            'monto_anterior' => $a->monto_anterior,
+            'monto_nuevo' => $a->monto_nuevo,
+            'diferencia' => $a->diferencia(),
+            'variacion' => (float) $a->variacion_porcentual,
+            'indice' => $a->indice->labelCorto(),
+            'ventana' => $a->periodo_indice_desde->format('m/Y').' a '.$a->periodo_indice_hasta->format('m/Y'),
+            'estado' => $a->estado->value,
+            'estado_label' => $a->estado->label(),
+            'notas' => $a->notas,
+            'editable' => $corregibles->has($a->id),
+        ]);
 
         return Inertia::render('ajustes/Index', [
             'propuestos' => $ajustes->where('estado', EstadoAjuste::Propuesto->value)->values(),
@@ -91,6 +102,30 @@ class RentAdjustmentController extends Controller
             'Alquiler actualizado a $%s desde el %s.',
             number_format((float) $aplicado->monto_nuevo, 2, ',', '.'),
             $aplicado->vigencia_desde->format('d/m/Y'),
+        ));
+    }
+
+    /**
+     * Corrige el importe de un ajuste ya aplicado. Pensado para el redondeo que
+     * quedó pendiente al confirmar; sólo el último ajuste aplicado del contrato.
+     */
+    public function actualizar(Request $request, RentAdjustment $adjustment, AplicadorDeAjuste $aplicador): RedirectResponse
+    {
+        $this->authorize('resolver', $adjustment);
+
+        if (! $adjustment->esElUltimoAplicado()) {
+            return back()->with('error', 'Sólo se puede corregir el importe del último ajuste aplicado del contrato.');
+        }
+
+        $datos = $request->validate([
+            'monto' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $aplicado = $aplicador->corregirImporte($adjustment, $datos['monto']);
+
+        return back()->with('success', sprintf(
+            'Importe corregido: el alquiler queda en $%s.',
+            number_format((float) $aplicado->monto_nuevo, 2, ',', '.'),
         ));
     }
 

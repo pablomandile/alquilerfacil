@@ -102,6 +102,26 @@ class RentAdjustment extends Model
     }
 
     /**
+     * ¿Es el ajuste aplicado más reciente de su contrato? Es el único al que
+     * después se le puede corregir el importe: fija el alquiler que rige hoy.
+     * Tocar uno anterior desalinearía el historial que reconstruye
+     * `Contract::montoVigenteEn()`.
+     */
+    public function esElUltimoAplicado(): bool
+    {
+        if ($this->estado !== EstadoAjuste::Aplicado) {
+            return false;
+        }
+
+        return self::query()
+            ->where('contract_id', $this->contract_id)
+            ->where('estado', EstadoAjuste::Aplicado)
+            ->orderByDesc('vigencia_desde')
+            ->orderByDesc('id')
+            ->value('id') === $this->id;
+    }
+
+    /**
      * Diferencia en pesos entre el monto nuevo y el anterior.
      *
      * @return numeric-string

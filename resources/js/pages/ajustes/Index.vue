@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { Clock, RefreshCw, TrendingUp } from '@lucide/vue';
+import { Clock, Pencil, RefreshCw, TrendingUp } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
+import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +35,7 @@ type Ajuste = {
     estado: string;
     estado_label: string;
     notas: string | null;
+    editable: boolean;
 };
 
 const props = defineProps<{
@@ -80,6 +82,30 @@ function confirmarAplicar() {
                 formAplicar.reset();
             },
         });
+}
+
+/* Corregir el importe de un ajuste ya aplicado: el caso típico es haberlo
+   confirmado sin redondear. Sólo se ofrece en el último aplicado del contrato. */
+const hayEditables = computed(() => props.historial.some((a) => a.editable));
+const corrigiendo = ref<Ajuste | null>(null);
+const formCorregir = useForm({ monto: '' });
+
+function abrirCorregir(ajuste: Ajuste) {
+    corrigiendo.value = ajuste;
+    formCorregir.monto = ajuste.monto_nuevo;
+    formCorregir.clearErrors();
+}
+
+function confirmarCorregir() {
+    if (!corrigiendo.value) return;
+
+    formCorregir.patch(rutasAjustes.actualizar(corrigiendo.value.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            corrigiendo.value = null;
+            formCorregir.reset();
+        },
+    });
 }
 
 const rechazando = ref<Ajuste | null>(null);
@@ -260,6 +286,12 @@ function recalcular() {
                                 Variación
                             </th>
                             <th class="px-4 py-2 font-medium">Estado</th>
+                            <th
+                                v-if="puedeGestionar && hayEditables"
+                                class="px-4 py-2"
+                            >
+                                <span class="sr-only">Acciones</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
@@ -289,6 +321,21 @@ function recalcular() {
                                     :estado="a.estado"
                                     :label="a.estado_label"
                                 />
+                            </td>
+                            <td
+                                v-if="puedeGestionar && hayEditables"
+                                class="px-4 py-2 text-right"
+                            >
+                                <Button
+                                    v-if="a.editable"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-7 gap-1.5 px-2"
+                                    @click="abrirCorregir(a)"
+                                >
+                                    <Pencil class="size-3.5" />
+                                    Corregir
+                                </Button>
                             </td>
                         </tr>
                     </tbody>
@@ -385,6 +432,53 @@ function recalcular() {
                     @click="confirmarRechazar"
                 >
                     Rechazar
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <!-- Corregir el importe de un ajuste ya aplicado -->
+    <Dialog
+        :open="corrigiendo !== null"
+        @update:open="(v) => !v && (corrigiendo = null)"
+    >
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Corregir el importe</DialogTitle>
+                <DialogDescription v-if="corrigiendo">
+                    {{ corrigiendo.propiedad }} — ajuste con vigencia
+                    {{ corrigiendo.vigencia }}. Cambia el alquiler vigente; los
+                    cargos ya emitidos quedan como están.
+                </DialogDescription>
+            </DialogHeader>
+
+            <div v-if="corrigiendo" class="grid gap-2">
+                <Label for="monto-correccion">Importe del alquiler</Label>
+                <Input
+                    id="monto-correccion"
+                    v-model="formCorregir.monto"
+                    type="number"
+                    step="0.01"
+                    class="tabular-nums"
+                />
+                <InputError :message="formCorregir.errors.monto" />
+                <p class="text-muted-foreground text-xs">
+                    Calculado por {{ corrigiendo.indice }}
+                    {{ corrigiendo.ventana }} ({{
+                        porcentaje(corrigiendo.variacion)
+                    }}).
+                </p>
+            </div>
+
+            <DialogFooter>
+                <Button variant="outline" @click="corrigiendo = null">
+                    Cancelar
+                </Button>
+                <Button
+                    :disabled="formCorregir.processing"
+                    @click="confirmarCorregir"
+                >
+                    Guardar
                 </Button>
             </DialogFooter>
         </DialogContent>

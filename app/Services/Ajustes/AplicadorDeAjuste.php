@@ -76,6 +76,31 @@ class AplicadorDeAjuste
     }
 
     /**
+     * Corrige el importe de un ajuste ya aplicado y lo replica en el alquiler
+     * vigente del contrato. Es para el redondeo que quedó pendiente al
+     * confirmar, así que no toca los valores del índice, la variación ni la
+     * fecha del próximo ajuste: sólo el número que se cobra.
+     *
+     * Los cargos ya emitidos no cambian (su monto quedó congelado al emitirlos);
+     * el valor corregido lo toma el próximo cargo que se genere.
+     *
+     * @param  numeric-string  $monto
+     */
+    public function corregirImporte(RentAdjustment $ajuste, string $monto): RentAdjustment
+    {
+        return DB::transaction(function () use ($ajuste, $monto) {
+            $ajuste->monto_nuevo = Decimal::redondear($monto);
+            $ajuste->notas = trim(($ajuste->notas ?? '')
+                ."\nImporte corregido a mano el ".now()->format('d/m/Y').'.');
+            $ajuste->save();
+
+            $ajuste->contract->update(['monto_actual' => $ajuste->monto_nuevo]);
+
+            return $ajuste->fresh();
+        });
+    }
+
+    /**
      * Descarta el ajuste y corre la fecha del próximo.
      *
      * Correrla es lo que evita que la app vuelva a proponer lo mismo cada vez. La

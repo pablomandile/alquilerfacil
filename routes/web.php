@@ -138,6 +138,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('ajustes.aplicar');
     Route::post('ajustes/{adjustment}/rechazar', [RentAdjustmentController::class, 'rechazar'])
         ->name('ajustes.rechazar');
+    // Corregir el importe de un ajuste ya aplicado (típico: se olvidó de
+    // redondear). Sólo el último de cada contrato: es el que fija el alquiler.
+    Route::patch('ajustes/{adjustment}', [RentAdjustmentController::class, 'actualizar'])
+        ->whereNumber('adjustment')->name('ajustes.actualizar');
 
     // Cobranzas
     Route::post('cobranzas/generar', [RentChargeController::class, 'generar'])
