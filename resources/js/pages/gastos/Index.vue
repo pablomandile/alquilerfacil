@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Pencil, Plus, Receipt } from '@lucide/vue';
+import { Paperclip, Pencil, Plus, Receipt } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import VisorArchivo, {
+    type ArchivoVisible,
+} from '@/components/VisorArchivo.vue';
 import { Button } from '@/components/ui/button';
 import { pesos } from '@/lib/formato';
 import rutasGastos from '@/routes/gastos';
+import rutasGastosDocumentos from '@/routes/gastos/documentos';
+
+type Documento = {
+    id: number;
+    tipo_label: string;
+    nombre: string;
+    mime: string;
+};
 
 type Gasto = {
     id: number;
@@ -24,6 +35,7 @@ type Gasto = {
     pagado: boolean;
     vencido: boolean;
     reparto: Array<{ nombre: string; porcentaje: number; monto: string }>;
+    documentos: Documento[];
 };
 
 const props = defineProps<{
@@ -65,6 +77,19 @@ function aplicarFiltros() {
 const total = computed(() =>
     props.gastos.reduce((suma, g) => suma + Number(g.monto), 0),
 );
+
+const visor = ref<ArchivoVisible | null>(null);
+
+function verDocumento(d: Documento) {
+    visor.value = {
+        nombre: d.nombre,
+        mime: d.mime,
+        verUrl: rutasGastosDocumentos.show(d.id).url,
+        descargarUrl: rutasGastosDocumentos.show(d.id, {
+            query: { descarga: 1 },
+        }).url,
+    };
+}
 </script>
 
 <template>
@@ -191,6 +216,23 @@ const total = computed(() =>
                     </div>
                 </div>
 
+                <!-- Comprobantes adjuntos -->
+                <div
+                    v-if="g.documentos.length"
+                    class="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-xs"
+                >
+                    <button
+                        v-for="d in g.documentos"
+                        :key="d.id"
+                        type="button"
+                        class="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1"
+                        @click="verDocumento(d)"
+                    >
+                        <Paperclip class="size-3.5 shrink-0" />
+                        {{ d.tipo_label }}
+                    </button>
+                </div>
+
                 <!-- Reparto entre dueños, cuando el gasto va a cargo de ellos -->
                 <div v-if="g.reparto.length" class="mt-3 border-t pt-3">
                     <p class="text-muted-foreground mb-1.5 text-xs">
@@ -217,4 +259,6 @@ const total = computed(() =>
             </article>
         </div>
     </div>
+
+    <VisorArchivo v-model:archivo="visor" />
 </template>

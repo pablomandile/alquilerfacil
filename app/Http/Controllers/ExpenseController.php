@@ -4,15 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Enums\ACargoDe;
 use App\Enums\CategoriaGasto;
+use App\Enums\TipoDocumentoGasto;
 use App\Enums\TipoGasto;
 use App\Exceptions\RepartoInvalidoException;
 use App\Models\Contract;
 use App\Models\Expense;
+use App\Models\ExpenseDocument;
 use App\Models\Property;
 use App\Services\Repartos\RepartidorEntreDuenos;
 use App\Support\Opciones;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,7 +42,7 @@ class ExpenseController extends Controller
                 $filtros['pagado'] ?? null,
                 fn ($q, $p) => $q->where('pagado', $p === 'si')
             )
-            ->with(['property:id,alias', 'shares.owner:id,nombre'])
+            ->with(['property:id,alias', 'shares.owner:id,nombre', 'documents'])
             ->orderByDesc('periodo')
             ->orderBy('vencimiento')
             ->get()
@@ -59,6 +64,12 @@ class ExpenseController extends Controller
                     'nombre' => $s->owner->nombre,
                     'porcentaje' => (float) $s->porcentaje,
                     'monto' => $s->monto,
+                ]),
+                'documentos' => $g->documents->map(fn (ExpenseDocument $d) => [
+                    'id' => $d->id,
+                    'tipo_label' => $d->tipo->label(),
+                    'nombre' => $d->nombre_original,
+                    'mime' => $d->mime,
                 ]),
             ]);
 
@@ -85,7 +96,8 @@ class ExpenseController extends Controller
         $datos = $this->validado($request);
         $this->authorize('create', [Expense::class, Property::findOrFail($datos['property_id'])]);
 
-        $gasto = Expense::query()->create($datos);
+        $gasto = Expense::query()->create(Arr::except($datos, ['factura', 'comprobante']));
+        $this->guardarDocumentos($request, $gasto);
 
         return $this->repartirYVolver($gasto, 'Gasto cargado.');
     }
@@ -93,6 +105,8 @@ class ExpenseController extends Controller
     public function edit(Request $request, Expense $expense): Response
     {
         $this->authorize('update', $expense);
+
+        $expense->load('documents');
 
         return Inertia::render('gastos/Form', [
             ...$this->datosDelFormulario($request),
@@ -104,6 +118,15 @@ class ExpenseController extends Controller
                 'periodo' => $expense->periodo->toDateString(),
                 'vencimiento' => $expense->vencimiento?->toDateString(),
                 'fecha_pago' => $expense->fecha_pago?->toDateString(),
+                'documentos' => $expense->documents->map(fn (ExpenseDocument $d) => [
+                    'id' => $d->id,
+                    'tipo' => $d->tipo->value,
+                    'tipo_label' => $d->tipo->label(),
+                    'nombre' => $d->nombre_original,
+                    'tamano' => $d->tamano,
+                    'mime' => $d->mime,
+                    'fecha' => $d->created_at?->format('d/m/Y'),
+                ]),
             ],
         ]);
     }
@@ -115,11 +138,12 @@ class ExpenseController extends Controller
         $datos = $this->validado($request);
 
         // Si lo mueve a otra propiedad, tiene que poder gestionar también esa.
-        if ($datos['property_id'] !== $expense->property_id) {
+        if ((int) $datos['property_id'] !== $expense->property_id) {
             $this->authorize('create', [Expense::class, Property::findOrFail($datos['property_id'])]);
         }
 
-        $expense->update($datos);
+        $expense->update(Arr::except($datos, ['factura', 'comprobante']));
+        $this->guardarDocumentos($request, $expense);
 
         return $this->repartirYVolver($expense->fresh(), 'Gasto actualizado.');
     }
@@ -171,7 +195,51 @@ class ExpenseController extends Controller
             'pagado' => ['boolean'],
             'fecha_pago' => ['nullable', 'date'],
             'notas' => ['nullable', 'string', 'max:5000'],
+            // La factura / expensa del período y el comprobante de pago. Por
+            // extensión y no por MIME (los .docx dan falso negativo).
+            'factura' => ['nullable', 'file', 'max:10240', 'extensions:pdf,jpg,jpeg,png,webp,doc,docx'],
+            'comprobante' => ['nullable', 'file', 'max:10240', 'extensions:pdf,jpg,jpeg,png,webp,doc,docx'],
         ]);
+    }
+
+    /**
+     * Guarda la factura y/o el comprobante que vengan en el request, cada uno
+     * con su tipo. Se llama después de crear/actualizar el gasto, cuando ya
+     * tiene id.
+     */
+    private function guardarDocumentos(Request $request, Expense $expense): void
+    {
+        $tipoPorCampo = [
+            'factura' => TipoDocumentoGasto::Factura,
+            'comprobante' => TipoDocumentoGasto::Comprobante,
+        ];
+
+        foreach ($tipoPorCampo as $campo => $tipo) {
+            $archivo = $request->file($campo);
+
+            if (! $archivo instanceof UploadedFile) {
+                continue;
+            }
+
+            $path = $archivo->storeAs(
+                "gastos/{$expense->id}",
+                Str::ulid().'.'.strtolower($archivo->getClientOriginalExtension()),
+                'local',
+            );
+
+            if ($path === false) {
+                continue;
+            }
+
+            $expense->documents()->create([
+                'tipo' => $tipo,
+                'nombre_original' => $archivo->getClientOriginalName(),
+                'path' => $path,
+                'mime' => $archivo->getMimeType() ?? $archivo->getClientMimeType(),
+                'tamano' => $archivo->getSize() ?: 0,
+                'subido_por' => $request->user()?->id,
+            ]);
+        }
     }
 
     /** @return array<string, mixed> */

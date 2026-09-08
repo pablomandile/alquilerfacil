@@ -1,15 +1,31 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, watch } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Download, Eye, FileText, Trash2 } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import VisorArchivo, {
+    type ArchivoVisible,
+} from '@/components/VisorArchivo.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { tamano } from '@/lib/formato';
 import rutasGastos from '@/routes/gastos';
+import rutasGastosDocumentos from '@/routes/gastos/documentos';
 
 type Opcion = { value: string; label: string };
+
+type Documento = {
+    id: number;
+    tipo: string;
+    tipo_label: string;
+    nombre: string;
+    tamano: number;
+    mime: string;
+    fecha: string | null;
+};
 
 const props = defineProps<{
     propiedades: Array<{ id: number; alias: string }>;
@@ -31,6 +47,7 @@ const props = defineProps<{
         pagado: boolean;
         fecha_pago: string | null;
         notas: string | null;
+        documentos: Documento[];
     };
 }>();
 
@@ -42,7 +59,22 @@ defineOptions({
     },
 });
 
-const form = useForm({
+const form = useForm<{
+    property_id: number | null;
+    contract_id: number | null;
+    tipo: string;
+    categoria: string;
+    descripcion: string;
+    periodo: string;
+    monto: string;
+    vencimiento: string;
+    a_cargo_de: string;
+    pagado: boolean;
+    fecha_pago: string;
+    notas: string;
+    factura: File | null;
+    comprobante: File | null;
+}>({
     property_id: props.gasto?.property_id ?? null,
     contract_id: props.gasto?.contract_id ?? null,
     tipo: props.gasto?.tipo ?? 'servicio',
@@ -56,7 +88,32 @@ const form = useForm({
     pagado: props.gasto?.pagado ?? false,
     fecha_pago: props.gasto?.fecha_pago ?? '',
     notas: props.gasto?.notas ?? '',
+    factura: null,
+    comprobante: null,
 });
+
+function elegirArchivo(campo: 'factura' | 'comprobante', evento: Event) {
+    form[campo] = (evento.target as HTMLInputElement).files?.[0] ?? null;
+}
+
+const visor = ref<ArchivoVisible | null>(null);
+
+function verDocumento(d: Documento) {
+    visor.value = {
+        nombre: d.nombre,
+        mime: d.mime,
+        verUrl: rutasGastosDocumentos.show(d.id).url,
+        descargarUrl: rutasGastosDocumentos.show(d.id, {
+            query: { descarga: 1 },
+        }).url,
+    };
+}
+
+function borrarDocumento(id: number) {
+    router.delete(rutasGastosDocumentos.destroy(id).url, {
+        preserveScroll: true,
+    });
+}
 
 /* Los gastos extraordinarios e impuestos normalmente los soportan los dueños;
    los servicios, el inquilino. Se sugiere al cambiar el tipo, sin imponerlo. */
@@ -76,7 +133,11 @@ const contratosDeLaPropiedad = computed(() =>
 
 function enviar() {
     if (editando.value && props.gasto) {
-        form.put(rutasGastos.update(props.gasto.id).url);
+        // PUT con multipart no funciona (PHP no llena $_FILES): se manda POST
+        // con _method spoofeado, que Inertia no hace solo.
+        form.transform((datos) => ({ ...datos, _method: 'put' })).post(
+            rutasGastos.update(props.gasto.id).url,
+        );
         return;
     }
 
@@ -262,6 +323,97 @@ function enviar() {
                 </div>
             </section>
 
+            <!-- Comprobantes: la factura / expensa del período y el pago -->
+            <section
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
+            >
+                <h2 class="text-sm font-medium">Comprobantes</h2>
+
+                <!-- Adjuntos ya cargados (sólo al editar) -->
+                <ul
+                    v-if="gasto?.documentos.length"
+                    class="divide-y rounded-lg border"
+                >
+                    <li
+                        v-for="d in gasto.documentos"
+                        :key="d.id"
+                        class="flex items-center gap-3 px-3 py-2"
+                    >
+                        <FileText
+                            class="text-muted-foreground size-4 shrink-0"
+                        />
+                        <button
+                            type="button"
+                            class="min-w-0 flex-1 cursor-pointer text-left"
+                            @click="verDocumento(d)"
+                        >
+                            <p class="text-sm font-medium">
+                                {{ d.tipo_label }}
+                            </p>
+                            <p class="text-muted-foreground truncate text-xs">
+                                {{ d.nombre }} · {{ tamano(d.tamano) }}
+                                <span v-if="d.fecha"> · {{ d.fecha }}</span>
+                            </p>
+                        </button>
+                        <button
+                            type="button"
+                            class="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+                            @click="verDocumento(d)"
+                        >
+                            <Eye class="size-4" />
+                            <span class="sr-only">Ver</span>
+                        </button>
+                        <a
+                            :href="
+                                rutasGastosDocumentos.show(d.id, {
+                                    query: { descarga: 1 },
+                                }).url
+                            "
+                            class="text-muted-foreground hover:text-foreground shrink-0"
+                        >
+                            <Download class="size-4" />
+                            <span class="sr-only">Descargar</span>
+                        </a>
+                        <button
+                            type="button"
+                            class="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+                            @click="borrarDocumento(d.id)"
+                        >
+                            <Trash2 class="size-4" />
+                            <span class="sr-only">Eliminar</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid gap-2">
+                        <Label for="factura">Factura / expensa</Label>
+                        <input
+                            id="factura"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                            class="file:bg-secondary text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                            @change="elegirArchivo('factura', $event)"
+                        />
+                        <InputError :message="form.errors.factura" />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="comprobante">Comprobante de pago</Label>
+                        <input
+                            id="comprobante"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                            class="file:bg-secondary text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                            @change="elegirArchivo('comprobante', $event)"
+                        />
+                        <InputError :message="form.errors.comprobante" />
+                    </div>
+                </div>
+                <p class="text-muted-foreground text-xs">
+                    PDF, imágenes o Word. Hasta 10 MB cada uno.
+                </p>
+            </section>
+
             <div class="grid gap-2">
                 <Label for="notas">Notas</Label>
                 <textarea
@@ -282,4 +434,6 @@ function enviar() {
             </div>
         </form>
     </div>
+
+    <VisorArchivo v-model:archivo="visor" />
 </template>

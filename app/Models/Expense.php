@@ -13,7 +13,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
@@ -28,18 +30,29 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property ACargoDe $a_cargo_de
  * @property bool $pagado
  * @property CarbonInterface|null $fecha_pago
- * @property string|null $comprobante_path
  * @property-read Property $property
  */
 #[Fillable([
     'property_id', 'contract_id', 'tipo', 'categoria', 'descripcion', 'periodo',
-    'monto', 'vencimiento', 'a_cargo_de', 'pagado', 'fecha_pago',
-    'comprobante_path', 'notas',
+    'monto', 'vencimiento', 'a_cargo_de', 'pagado', 'fecha_pago', 'notas',
 ])]
 class Expense extends Model implements Repartible
 {
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
+
+    /**
+     * Al borrar el gasto se van sus archivos del disco y su reparto entre
+     * dueños (OwnerShare es polimórfico, sin foreign key que lo arrastre). Las
+     * filas de expense_documents caen solas por la foreign key.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Expense $expense): void {
+            $expense->shares()->delete();
+            Storage::disk('local')->deleteDirectory("gastos/{$expense->id}");
+        });
+    }
 
     protected function casts(): array
     {
@@ -65,6 +78,12 @@ class Expense extends Model implements Repartible
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    /** @return HasMany<ExpenseDocument, $this> */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ExpenseDocument::class)->latest();
     }
 
     /**

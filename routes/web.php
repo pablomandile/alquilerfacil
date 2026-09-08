@@ -8,6 +8,7 @@ use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseDocumentController;
 use App\Http\Controllers\IndiceController;
 use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\OwnerController;
@@ -114,6 +115,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('gastos', ExpenseController::class)
         ->parameters(['gastos' => 'expense'])
         ->except(['index', 'show']);
+
+    // Documentos del gasto: la factura / expensa del período y el comprobante de
+    // pago. Se suben junto con el gasto; acá sólo se ven y se borran.
+    Route::get('gastos/documentos/{document}', [ExpenseDocumentController::class, 'show'])
+        ->whereNumber('document')->name('gastos.documentos.show');
+    Route::delete('gastos/documentos/{document}', [ExpenseDocumentController::class, 'destroy'])
+        ->whereNumber('document')->name('gastos.documentos.destroy');
 
     Route::resource('inquilinos', TenantController::class)
         ->parameters(['inquilinos' => 'tenant'])

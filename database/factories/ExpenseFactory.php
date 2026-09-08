@@ -30,7 +30,6 @@ class ExpenseFactory extends Factory
             'a_cargo_de' => ACargoDe::Inquilino,
             'pagado' => false,
             'fecha_pago' => null,
-            'comprobante_path' => null,
             'notas' => null,
         ];
     }
