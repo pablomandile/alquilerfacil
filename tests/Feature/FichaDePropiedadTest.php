@@ -132,14 +132,13 @@ class FichaDePropiedadTest extends TestCase
                 // Sin cargo emitido: el alquiler sale del contrato.
                 ->where('mensajeInquilino.alquiler.monto', '478000.00')
                 ->where('mensajeInquilino.alquiler.vencimiento', today()->startOfMonth()->setDay(10)->format('d/m/Y'))
-                ->where('mensajeInquilino.alquiler.pagado', false)
                 ->has('mensajeInquilino.gastos', 1)
                 ->where('mensajeInquilino.gastos.0.concepto', 'Expensas')
                 ->where('mensajeInquilino.gastos.0.monto', '78500.00')
             );
     }
 
-    public function test_si_hay_cargo_emitido_el_alquiler_usa_su_monto_congelado(): void
+    public function test_el_cuadro_no_cambia_aunque_todo_este_pago(): void
     {
         $admin = User::factory()->admin()->create();
         $propiedad = Property::factory()->create();
@@ -147,40 +146,33 @@ class FichaDePropiedadTest extends TestCase
             'property_id' => $propiedad->id, 'monto_actual' => 500000,
         ]);
 
-        $cargo = RentCharge::factory()->conMonto(490000)->create([
-            'contract_id' => $contrato->id,
-            'periodo' => today()->startOfMonth(),
-        ]);
-        Payment::factory()->de(200000)->create(['rent_charge_id' => $cargo->id]);
-
-        $this->actingAs($admin)
-            ->get(route('propiedades.show', $propiedad))
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                // Siempre el monto del alquiler, aunque haya un pago parcial.
-                ->where('mensajeInquilino.alquiler.monto', '490000.00')
-                ->where('mensajeInquilino.alquiler.pagado', false)
-            );
-    }
-
-    public function test_el_alquiler_ya_cobrado_muestra_el_monto_y_queda_marcado_pagado(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $propiedad = Property::factory()->create();
-        $contrato = Contract::factory()->create(['property_id' => $propiedad->id]);
-
+        // Cargo del mes emitido y cobrado entero.
         $cargo = RentCharge::factory()->conMonto(490000)->create([
             'contract_id' => $contrato->id,
             'periodo' => today()->startOfMonth(),
         ]);
         Payment::factory()->de(490000)->create(['rent_charge_id' => $cargo->id]);
 
+        // Gasto del inquilino ya pagado.
+        Expense::factory()->pagado()->create([
+            'property_id' => $propiedad->id,
+            'a_cargo_de' => ACargoDe::Inquilino,
+            'descripcion' => 'Expensas',
+            'monto' => 78500,
+            'vencimiento' => today()->startOfMonth()->addDays(14),
+        ]);
+
         $this->actingAs($admin)
             ->get(route('propiedades.show', $propiedad))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
+                // El monto congelado del cargo, sin importar lo cobrado.
                 ->where('mensajeInquilino.alquiler.monto', '490000.00')
-                ->where('mensajeInquilino.alquiler.pagado', true)
+                ->has('mensajeInquilino.gastos', 1)
+                ->where('mensajeInquilino.gastos.0.monto', '78500.00')
+                // Ya no se informa estado de pago acá.
+                ->missing('mensajeInquilino.alquiler.pagado')
+                ->missing('mensajeInquilino.gastos.0.pagado')
             );
     }
 

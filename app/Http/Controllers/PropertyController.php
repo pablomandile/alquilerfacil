@@ -276,7 +276,8 @@ class PropertyController extends Controller
 
     /**
      * El alquiler del mes más los gastos a cargo del inquilino que vencen en el
-     * mes en curso: lo que se le informa para que pague.
+     * mes en curso: lo que se le informa para que pague. El cuadro y el mensaje
+     * son siempre iguales; el estado de pago se controla en Cobranzas, no acá.
      *
      * @return array<string, mixed>
      */
@@ -284,29 +285,19 @@ class PropertyController extends Controller
     {
         $mes = now()->startOfMonth();
 
-        // El cargo del mes si ya está emitido: tiene el monto congelado y su
-        // vencimiento. Si no, se usa el alquiler actual y el día de vencimiento
-        // del contrato. El `monto` es siempre el del alquiler (no el saldo): en
-        // el cuadro se informa cuánto es, y `pagado` dice si ya está saldado.
+        // El cargo del mes si ya está emitido tiene el monto congelado y su
+        // vencimiento; si no, se usa el alquiler actual y el día de vencimiento
+        // del contrato.
         $cargo = $contrato->charges()->delPeriodo($mes)->first();
 
         if ($cargo !== null) {
             $montoAlquiler = $cargo->monto;
             $venceAlquiler = $cargo->vencimiento;
-            $alquilerPagado = bccomp($cargo->saldo(), '0', 2) <= 0;
         } else {
             $dia = min($contrato->dia_vencimiento, $mes->daysInMonth);
             $montoAlquiler = $contrato->monto_actual;
             $venceAlquiler = $mes->copy()->day($dia);
-            $alquilerPagado = false;
         }
-
-        $alquiler = [
-            'concepto' => 'Alquiler '.$mes->translatedFormat('F'),
-            'monto' => $montoAlquiler,
-            'vencimiento' => $venceAlquiler->format('d/m/Y'),
-            'pagado' => $alquilerPagado,
-        ];
 
         $gastos = $contrato->property->expenses()
             ->where('a_cargo_de', ACargoDe::Inquilino)
@@ -319,14 +310,17 @@ class PropertyController extends Controller
                 'concepto' => $g->descripcion ?: $g->categoria->label(),
                 'monto' => $g->monto,
                 'vencimiento' => $g->vencimiento?->format('d/m/Y'),
-                'pagado' => $g->pagado,
             ]);
 
         return [
             'inquilino' => $contrato->tenant->nombre,
             'telefono' => $contrato->tenant->telefono,
             'mes' => now()->translatedFormat('F \d\e Y'),
-            'alquiler' => $alquiler,
+            'alquiler' => [
+                'concepto' => 'Alquiler '.$mes->translatedFormat('F'),
+                'monto' => $montoAlquiler,
+                'vencimiento' => $venceAlquiler->format('d/m/Y'),
+            ],
             'gastos' => $gastos,
         ];
     }

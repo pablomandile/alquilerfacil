@@ -124,13 +124,11 @@ const props = defineProps<{
             concepto: string;
             monto: string;
             vencimiento: string | null;
-            pagado: boolean;
         };
         gastos: Array<{
             concepto: string;
             monto: string;
             vencimiento: string | null;
-            pagado: boolean;
         }>;
     } | null;
 }>();
@@ -190,12 +188,11 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
 }
 
 /* Cuadro y mensaje del mes para el inquilino: el alquiler más los gastos a su
-   cargo. El cuadro muestra todo; el mensaje, sólo lo pendiente. */
+   cargo. Es siempre el mismo mensaje, no depende de si algo está pago. */
 type ItemMes = {
     concepto: string;
     monto: string;
     vencimiento: string | null;
-    pagado: boolean;
 };
 
 const itemsDelMes = computed<ItemMes[]>(() =>
@@ -204,12 +201,8 @@ const itemsDelMes = computed<ItemMes[]>(() =>
         : [],
 );
 
-const itemsPendientes = computed(() =>
-    itemsDelMes.value.filter((i) => !i.pagado),
-);
-
-const totalPendiente = computed(() =>
-    itemsPendientes.value.reduce((suma, i) => suma + Number(i.monto), 0),
+const totalDelMes = computed(() =>
+    itemsDelMes.value.reduce((suma, i) => suma + Number(i.monto), 0),
 );
 
 const textoMensaje = computed(() => {
@@ -218,23 +211,18 @@ const textoMensaje = computed(() => {
 
     const nombre = m.inquilino.split(' ')[0];
 
-    if (!itemsPendientes.value.length) {
-        return `Hola ${nombre}, este mes no tenés nada pendiente. ¡Gracias!`;
-    }
-
-    const conAlquiler = itemsPendientes.value.includes(m.alquiler);
-    const lineas = itemsPendientes.value.map(
+    const lineas = itemsDelMes.value.map(
         (i) =>
             `• ${i.concepto} — ${pesos(i.monto)}` +
             (i.vencimiento ? ` (vence ${i.vencimiento})` : ''),
     );
 
     return [
-        `Hola ${nombre}, te paso ${conAlquiler ? 'el alquiler y los gastos' : 'los gastos'} de este mes:`,
+        `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
         '',
         ...lineas,
         '',
-        `Total: ${pesos(totalPendiente.value)}`,
+        `Total: ${pesos(totalDelMes.value)}`,
     ].join('\n');
 });
 
@@ -517,24 +505,16 @@ const linkWhatsapp = computed(() => {
                             >
                                 {{ pesos(item.monto) }}
                             </td>
-                            <td class="px-4 py-2">
-                                <EstadoBadge
-                                    v-if="item.pagado"
-                                    estado="pagado"
-                                    label="Pagado"
-                                />
-                            </td>
                         </tr>
                     </tbody>
                     <tfoot class="border-t">
                         <tr class="font-semibold">
-                            <td class="px-4 py-2" colspan="2">Total a pagar</td>
+                            <td class="px-4 py-2" colspan="2">Total</td>
                             <td
                                 class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
-                                {{ pesos(totalPendiente) }}
+                                {{ pesos(totalDelMes) }}
                             </td>
-                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
