@@ -13,6 +13,7 @@ use App\Models\AdminThread;
 use App\Models\AdminThreadAttachment;
 use App\Models\AdminThreadEntry;
 use App\Models\Contract;
+use App\Models\Expense;
 use App\Models\Owner;
 use App\Models\Property;
 use App\Models\PropertyDocument;
@@ -116,6 +117,31 @@ class PropertyController extends Controller
             ->where('a_cargo_de', ACargoDe::Propietarios)
             ->sum('monto'), '0', 2);
 
+        // Cuadro de gastos del mes para pasarle al inquilino: los que están a su
+        // cargo y vencen dentro del mes en curso. Sólo si hay contrato vigente.
+        $contratoActivo = $property->contratoActivo()
+            ->with('tenant:id,nombre,telefono')
+            ->first();
+
+        $mensajeInquilino = $contratoActivo?->tenant === null ? null : [
+            'inquilino' => $contratoActivo->tenant->nombre,
+            'telefono' => $contratoActivo->tenant->telefono,
+            'mes' => now()->translatedFormat('F \d\e Y'),
+            'gastos' => $property->expenses()
+                ->where('a_cargo_de', ACargoDe::Inquilino)
+                ->whereNotNull('vencimiento')
+                ->whereMonth('vencimiento', now()->month)
+                ->whereYear('vencimiento', now()->year)
+                ->orderBy('vencimiento')
+                ->get()
+                ->map(fn (Expense $g) => [
+                    'concepto' => $g->descripcion ?: $g->categoria->label(),
+                    'monto' => $g->monto,
+                    'vencimiento' => $g->vencimiento?->format('d/m/Y'),
+                    'pagado' => $g->pagado,
+                ]),
+        ];
+
         return Inertia::render('propiedades/Show', [
             'propiedad' => [
                 'id' => $property->id,
@@ -197,6 +223,7 @@ class PropertyController extends Controller
             ],
             'tiposDocumento' => Opciones::de(TipoDocumentoPropiedad::class),
             'categoriasTemaAdmin' => Opciones::de(CategoriaTemaAdmin::class),
+            'mensajeInquilino' => $mensajeInquilino,
         ]);
     }
 

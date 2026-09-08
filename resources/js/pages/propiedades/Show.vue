@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Download, Eye, FileText, Pencil, Trash2, Upload } from '@lucide/vue';
+import { useClipboard } from '@vueuse/core';
+import {
+    Check,
+    Copy,
+    Download,
+    Eye,
+    FileText,
+    MessageCircle,
+    Pencil,
+    Trash2,
+    Upload,
+} from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
 import InputError from '@/components/InputError.vue';
@@ -105,6 +116,17 @@ const props = defineProps<{
     };
     tiposDocumento: Array<{ value: string; label: string }>;
     categoriasTemaAdmin: Array<{ value: string; label: string }>;
+    mensajeInquilino: {
+        inquilino: string;
+        telefono: string | null;
+        mes: string;
+        gastos: Array<{
+            concepto: string;
+            monto: string;
+            vencimiento: string | null;
+            pagado: boolean;
+        }>;
+    } | null;
 }>();
 
 defineOptions({
@@ -160,6 +182,60 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
         }).url,
     };
 }
+
+/* Mensaje de gastos del mes para copiar y pegar en WhatsApp. */
+const gastosPendientes = computed(
+    () => props.mensajeInquilino?.gastos.filter((g) => !g.pagado) ?? [],
+);
+
+const totalGastosMes = computed(() =>
+    (props.mensajeInquilino?.gastos ?? []).reduce(
+        (suma, g) => suma + Number(g.monto),
+        0,
+    ),
+);
+
+const totalPendiente = computed(() =>
+    gastosPendientes.value.reduce((suma, g) => suma + Number(g.monto), 0),
+);
+
+const textoMensaje = computed(() => {
+    const m = props.mensajeInquilino;
+    if (!m) return '';
+
+    const nombre = m.inquilino.split(' ')[0];
+
+    if (!gastosPendientes.value.length) {
+        return `Hola ${nombre}, este mes no tenés gastos ni expensas pendientes. ¡Gracias!`;
+    }
+
+    const lineas = gastosPendientes.value.map(
+        (g) =>
+            `• ${g.concepto} — ${pesos(g.monto)}` +
+            (g.vencimiento ? ` (vence ${g.vencimiento})` : ''),
+    );
+
+    return [
+        `Hola ${nombre}, te paso los gastos y expensas de este mes:`,
+        '',
+        ...lineas,
+        '',
+        `Total: ${pesos(totalPendiente.value)}`,
+    ].join('\n');
+});
+
+const { copy, copied } = useClipboard({ copiedDuring: 2000 });
+
+const linkWhatsapp = computed(() => {
+    const texto = encodeURIComponent(textoMensaje.value);
+    const tel = (props.mensajeInquilino?.telefono ?? '')
+        .replace(/\D/g, '')
+        .replace(/^0/, '');
+
+    if (!tel) return `https://wa.me/?text=${texto}`;
+
+    return `https://wa.me/${tel.startsWith('54') ? tel : `54${tel}`}?text=${texto}`;
+});
 </script>
 
 <template>
@@ -399,6 +475,92 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
                         </dd>
                     </div>
                 </dl>
+            </div>
+        </section>
+
+        <!-- Gastos del mes para el inquilino: cuadro + mensaje para WhatsApp -->
+        <section v-if="mensajeInquilino" class="space-y-3">
+            <h2 class="text-sm font-medium">
+                Gastos del mes para el inquilino
+            </h2>
+
+            <div
+                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-hidden rounded-xl border"
+            >
+                <p
+                    v-if="!mensajeInquilino.gastos.length"
+                    class="text-muted-foreground px-4 py-3 text-sm first-letter:uppercase"
+                >
+                    {{ mensajeInquilino.inquilino }} no tiene gastos a su cargo
+                    que venzan en {{ mensajeInquilino.mes }}.
+                </p>
+
+                <table v-else class="w-full text-sm">
+                    <tbody class="divide-y">
+                        <tr v-for="(g, i) in mensajeInquilino.gastos" :key="i">
+                            <td class="px-4 py-2">{{ g.concepto }}</td>
+                            <td
+                                class="text-muted-foreground px-4 py-2 whitespace-nowrap"
+                            >
+                                vence {{ g.vencimiento }}
+                            </td>
+                            <td
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
+                            >
+                                {{ pesos(g.monto) }}
+                            </td>
+                            <td class="px-4 py-2">
+                                <EstadoBadge
+                                    v-if="g.pagado"
+                                    estado="pagado"
+                                    label="Pagado"
+                                />
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="border-t">
+                        <tr class="font-semibold">
+                            <td class="px-4 py-2" colspan="2">Total</td>
+                            <td
+                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
+                            >
+                                {{ pesos(totalGastosMes) }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div
+                    class="bg-muted/40 flex flex-wrap items-center gap-2 border-t p-3"
+                >
+                    <Button size="sm" @click="copy(textoMensaje)">
+                        <Check v-if="copied" class="size-4" />
+                        <Copy v-else class="size-4" />
+                        {{ copied ? 'Copiado' : 'Copiar mensaje' }}
+                    </Button>
+                    <Button as-child size="sm" variant="outline">
+                        <a
+                            :href="linkWhatsapp"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <MessageCircle class="size-4" />
+                            WhatsApp
+                        </a>
+                    </Button>
+                </div>
+
+                <details class="border-t px-4 py-3 text-sm">
+                    <summary
+                        class="text-muted-foreground cursor-pointer select-none"
+                    >
+                        Ver el mensaje
+                    </summary>
+                    <pre class="mt-2 font-sans text-sm whitespace-pre-wrap">{{
+                        textoMensaje
+                    }}</pre>
+                </details>
             </div>
         </section>
 
