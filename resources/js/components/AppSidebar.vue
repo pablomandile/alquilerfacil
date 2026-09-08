@@ -13,6 +13,7 @@ import {
 } from '@lucide/vue';
 import { computed, onUnmounted } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
+import InstallAppButton from '@/components/InstallAppButton.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -113,6 +114,7 @@ const referencia = computed<NavItem[]>(() => [
         </SidebarContent>
 
         <SidebarFooter>
+            <InstallAppButton />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

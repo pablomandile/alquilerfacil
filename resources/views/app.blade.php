@@ -2,7 +2,37 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+        {{-- PWA: se puede instalar como app. El manifest y el service worker
+             viven en public/ y se sirven con no-cache (ver public/.htaccess). --}}
+        <link rel="manifest" href="/manifest.webmanifest">
+        <meta name="theme-color" content="#0d192b">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="Alquiler Fácil">
+
+        {{-- Chrome dispara `beforeinstallprompt` apenas carga la página, antes de
+             que monte Vue. Si lo escucháramos desde un componente, el evento ya
+             pasó y el botón "Instalar" no aparece nunca. Se captura acá. --}}
+        <script>
+            (function () {
+                window.__pwaInstall = { prompt: null, installed: false };
+
+                window.addEventListener('beforeinstallprompt', function (e) {
+                    e.preventDefault();
+                    window.__pwaInstall.prompt = e;
+                    window.dispatchEvent(new CustomEvent('pwa:installable'));
+                });
+
+                window.addEventListener('appinstalled', function () {
+                    window.__pwaInstall.prompt = null;
+                    window.__pwaInstall.installed = true;
+                    window.dispatchEvent(new CustomEvent('pwa:installed'));
+                });
+            })();
+        </script>
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>
