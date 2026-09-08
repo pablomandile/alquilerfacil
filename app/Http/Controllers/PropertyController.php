@@ -117,30 +117,15 @@ class PropertyController extends Controller
             ->where('a_cargo_de', ACargoDe::Propietarios)
             ->sum('monto'), '0', 2);
 
-        // Cuadro de gastos del mes para pasarle al inquilino: los que están a su
-        // cargo y vencen dentro del mes en curso. Sólo si hay contrato vigente.
+        // Cuadro del mes para pasarle al inquilino: el alquiler más los gastos a
+        // su cargo que vencen en el mes en curso. Sólo si hay contrato vigente.
         $contratoActivo = $property->contratoActivo()
             ->with('tenant:id,nombre,telefono')
             ->first();
 
-        $mensajeInquilino = $contratoActivo?->tenant === null ? null : [
-            'inquilino' => $contratoActivo->tenant->nombre,
-            'telefono' => $contratoActivo->tenant->telefono,
-            'mes' => now()->translatedFormat('F \d\e Y'),
-            'gastos' => $property->expenses()
-                ->where('a_cargo_de', ACargoDe::Inquilino)
-                ->whereNotNull('vencimiento')
-                ->whereMonth('vencimiento', now()->month)
-                ->whereYear('vencimiento', now()->year)
-                ->orderBy('vencimiento')
-                ->get()
-                ->map(fn (Expense $g) => [
-                    'concepto' => $g->descripcion ?: $g->categoria->label(),
-                    'monto' => $g->monto,
-                    'vencimiento' => $g->vencimiento?->format('d/m/Y'),
-                    'pagado' => $g->pagado,
-                ]),
-        ];
+        $mensajeInquilino = $contratoActivo?->tenant === null
+            ? null
+            : $this->mensajeParaInquilino($contratoActivo);
 
         return Inertia::render('propiedades/Show', [
             'propiedad' => [
@@ -287,6 +272,62 @@ class PropertyController extends Controller
         $property->delete();
 
         return to_route('propiedades.index')->with('success', 'Propiedad eliminada.');
+    }
+
+    /**
+     * El alquiler del mes más los gastos a cargo del inquilino que vencen en el
+     * mes en curso: lo que se le informa para que pague.
+     *
+     * @return array<string, mixed>
+     */
+    private function mensajeParaInquilino(Contract $contrato): array
+    {
+        $mes = now()->startOfMonth();
+
+        // El cargo del mes si ya está emitido: tiene el monto congelado, su
+        // vencimiento y lo que falta pagar. Si no, se usa el alquiler actual y
+        // el día de vencimiento del contrato.
+        $cargo = $contrato->charges()->delPeriodo($mes)->first();
+
+        if ($cargo !== null) {
+            $alquiler = [
+                'concepto' => 'Alquiler '.$mes->translatedFormat('F'),
+                'monto' => $cargo->saldo(),
+                'vencimiento' => $cargo->vencimiento->format('d/m/Y'),
+                'pagado' => bccomp($cargo->saldo(), '0', 2) <= 0,
+            ];
+        } else {
+            $dia = min($contrato->dia_vencimiento, $mes->daysInMonth);
+
+            $alquiler = [
+                'concepto' => 'Alquiler '.$mes->translatedFormat('F'),
+                'monto' => $contrato->monto_actual,
+                'vencimiento' => $mes->copy()->day($dia)->format('d/m/Y'),
+                'pagado' => false,
+            ];
+        }
+
+        $gastos = $contrato->property->expenses()
+            ->where('a_cargo_de', ACargoDe::Inquilino)
+            ->whereNotNull('vencimiento')
+            ->whereMonth('vencimiento', $mes->month)
+            ->whereYear('vencimiento', $mes->year)
+            ->orderBy('vencimiento')
+            ->get()
+            ->map(fn (Expense $g) => [
+                'concepto' => $g->descripcion ?: $g->categoria->label(),
+                'monto' => $g->monto,
+                'vencimiento' => $g->vencimiento?->format('d/m/Y'),
+                'pagado' => $g->pagado,
+            ]);
+
+        return [
+            'inquilino' => $contrato->tenant->nombre,
+            'telefono' => $contrato->tenant->telefono,
+            'mes' => now()->translatedFormat('F \d\e Y'),
+            'alquiler' => $alquiler,
+            'gastos' => $gastos,
+        ];
     }
 
     /** @param  list<array{owner_id: int, porcentaje: float|string}>  $propietarios */

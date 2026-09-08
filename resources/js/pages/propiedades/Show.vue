@@ -120,6 +120,12 @@ const props = defineProps<{
         inquilino: string;
         telefono: string | null;
         mes: string;
+        alquiler: {
+            concepto: string;
+            monto: string;
+            vencimiento: string | null;
+            pagado: boolean;
+        };
         gastos: Array<{
             concepto: string;
             monto: string;
@@ -183,20 +189,31 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
     };
 }
 
-/* Mensaje de gastos del mes para copiar y pegar en WhatsApp. */
-const gastosPendientes = computed(
-    () => props.mensajeInquilino?.gastos.filter((g) => !g.pagado) ?? [],
+/* Cuadro y mensaje del mes para el inquilino: el alquiler más los gastos a su
+   cargo. El cuadro muestra todo; el mensaje, sólo lo pendiente. */
+type ItemMes = {
+    concepto: string;
+    monto: string;
+    vencimiento: string | null;
+    pagado: boolean;
+};
+
+const itemsDelMes = computed<ItemMes[]>(() =>
+    props.mensajeInquilino
+        ? [props.mensajeInquilino.alquiler, ...props.mensajeInquilino.gastos]
+        : [],
 );
 
-const totalGastosMes = computed(() =>
-    (props.mensajeInquilino?.gastos ?? []).reduce(
-        (suma, g) => suma + Number(g.monto),
-        0,
-    ),
+const itemsPendientes = computed(() =>
+    itemsDelMes.value.filter((i) => !i.pagado),
+);
+
+const totalDelMes = computed(() =>
+    itemsDelMes.value.reduce((suma, i) => suma + Number(i.monto), 0),
 );
 
 const totalPendiente = computed(() =>
-    gastosPendientes.value.reduce((suma, g) => suma + Number(g.monto), 0),
+    itemsPendientes.value.reduce((suma, i) => suma + Number(i.monto), 0),
 );
 
 const textoMensaje = computed(() => {
@@ -205,18 +222,18 @@ const textoMensaje = computed(() => {
 
     const nombre = m.inquilino.split(' ')[0];
 
-    if (!gastosPendientes.value.length) {
-        return `Hola ${nombre}, este mes no tenés gastos ni expensas pendientes. ¡Gracias!`;
+    if (!itemsPendientes.value.length) {
+        return `Hola ${nombre}, este mes no tenés nada pendiente. ¡Gracias!`;
     }
 
-    const lineas = gastosPendientes.value.map(
-        (g) =>
-            `• ${g.concepto} — ${pesos(g.monto)}` +
-            (g.vencimiento ? ` (vence ${g.vencimiento})` : ''),
+    const lineas = itemsPendientes.value.map(
+        (i) =>
+            `• ${i.concepto} — ${pesos(i.monto)}` +
+            (i.vencimiento ? ` (vence ${i.vencimiento})` : ''),
     );
 
     return [
-        `Hola ${nombre}, te paso los gastos y expensas de este mes:`,
+        `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
         '',
         ...lineas,
         '',
@@ -478,40 +495,34 @@ const linkWhatsapp = computed(() => {
             </div>
         </section>
 
-        <!-- Gastos del mes para el inquilino: cuadro + mensaje para WhatsApp -->
+        <!-- Alquiler + gastos del mes para el inquilino: cuadro + mensaje -->
         <section v-if="mensajeInquilino" class="space-y-3">
             <h2 class="text-sm font-medium">
-                Gastos del mes para el inquilino
+                Alquiler y gastos del mes para el inquilino
             </h2>
 
             <div
                 class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-hidden rounded-xl border"
             >
-                <p
-                    v-if="!mensajeInquilino.gastos.length"
-                    class="text-muted-foreground px-4 py-3 text-sm first-letter:uppercase"
-                >
-                    {{ mensajeInquilino.inquilino }} no tiene gastos a su cargo
-                    que venzan en {{ mensajeInquilino.mes }}.
-                </p>
-
-                <table v-else class="w-full text-sm">
+                <table class="w-full text-sm">
                     <tbody class="divide-y">
-                        <tr v-for="(g, i) in mensajeInquilino.gastos" :key="i">
-                            <td class="px-4 py-2">{{ g.concepto }}</td>
+                        <tr v-for="(item, i) in itemsDelMes" :key="i">
+                            <td class="px-4 py-2">{{ item.concepto }}</td>
                             <td
                                 class="text-muted-foreground px-4 py-2 whitespace-nowrap"
                             >
-                                vence {{ g.vencimiento }}
+                                <span v-if="item.vencimiento">
+                                    vence {{ item.vencimiento }}
+                                </span>
                             </td>
                             <td
                                 class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
-                                {{ pesos(g.monto) }}
+                                {{ pesos(item.monto) }}
                             </td>
                             <td class="px-4 py-2">
                                 <EstadoBadge
-                                    v-if="g.pagado"
+                                    v-if="item.pagado"
                                     estado="pagado"
                                     label="Pagado"
                                 />
@@ -524,7 +535,7 @@ const linkWhatsapp = computed(() => {
                             <td
                                 class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
                             >
-                                {{ pesos(totalGastosMes) }}
+                                {{ pesos(totalDelMes) }}
                             </td>
                             <td></td>
                         </tr>

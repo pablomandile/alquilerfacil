@@ -80,7 +80,7 @@ class FichaDePropiedadTest extends TestCase
             );
     }
 
-    public function test_arma_el_cuadro_de_gastos_del_mes_para_el_inquilino(): void
+    public function test_arma_el_cuadro_del_mes_para_el_inquilino(): void
     {
         $admin = User::factory()->admin()->create();
         $propiedad = Property::factory()->create();
@@ -89,7 +89,10 @@ class FichaDePropiedadTest extends TestCase
             'nombre' => 'Sofía Ramírez', 'telefono' => '(011) 15-4444-5555',
         ]);
         Contract::factory()->create([
-            'property_id' => $propiedad->id, 'tenant_id' => $tenant->id,
+            'property_id' => $propiedad->id,
+            'tenant_id' => $tenant->id,
+            'monto_actual' => 478000,
+            'dia_vencimiento' => 10,
         ]);
 
         // Entra: a cargo del inquilino, vence este mes.
@@ -126,9 +129,37 @@ class FichaDePropiedadTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('mensajeInquilino.inquilino', 'Sofía Ramírez')
                 ->where('mensajeInquilino.telefono', '(011) 15-4444-5555')
+                // Sin cargo emitido: el alquiler sale del contrato.
+                ->where('mensajeInquilino.alquiler.monto', '478000.00')
+                ->where('mensajeInquilino.alquiler.vencimiento', today()->startOfMonth()->setDay(10)->format('d/m/Y'))
+                ->where('mensajeInquilino.alquiler.pagado', false)
                 ->has('mensajeInquilino.gastos', 1)
                 ->where('mensajeInquilino.gastos.0.concepto', 'Expensas')
                 ->where('mensajeInquilino.gastos.0.monto', '78500.00')
+            );
+    }
+
+    public function test_si_hay_cargo_emitido_el_alquiler_usa_su_saldo(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $propiedad = Property::factory()->create();
+        $contrato = Contract::factory()->create([
+            'property_id' => $propiedad->id, 'monto_actual' => 500000,
+        ]);
+
+        $cargo = RentCharge::factory()->conMonto(490000)->create([
+            'contract_id' => $contrato->id,
+            'periodo' => today()->startOfMonth(),
+        ]);
+        Payment::factory()->de(200000)->create(['rent_charge_id' => $cargo->id]);
+
+        $this->actingAs($admin)
+            ->get(route('propiedades.show', $propiedad))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                // Monto congelado del cargo, menos lo ya pagado.
+                ->where('mensajeInquilino.alquiler.monto', '290000.00')
+                ->where('mensajeInquilino.alquiler.pagado', false)
             );
     }
 
