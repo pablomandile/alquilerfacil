@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ACargoDe;
 use App\Models\Expense;
 use App\Models\Owner;
 use App\Models\RentCharge;
@@ -42,7 +43,7 @@ class LiquidacionController extends Controller
 
         $gastos = Expense::query()
             ->visiblePara($usuario)
-            ->aCargoDeLosPropietarios()
+            ->conReparto()
             ->whereYear('periodo', $periodo->year)
             ->whereMonth('periodo', $periodo->month)
             ->with(['shares.owner:id,nombre', 'property:id,alias'])
@@ -114,7 +115,7 @@ class LiquidacionController extends Controller
 
     /**
      * @param  Collection<int, Expense>  $gastos
-     * @return list<array{propiedad: string, descripcion: string, porcentaje: float, monto: numeric-string, pagado: bool}>
+     * @return list<array{propiedad: string, descripcion: string, porcentaje: float, monto: numeric-string, pagado: bool, compartido: bool}>
      */
     private function detalleDeGastos(Owner $owner, Collection $gastos): array
     {
@@ -128,6 +129,9 @@ class LiquidacionController extends Controller
                     'porcentaje' => (float) $share->porcentaje,
                     'monto' => $share->monto,
                     'pagado' => $gasto->pagado,
+                    // Compartido a medias con el inquilino: la parte de acá es
+                    // el porcentaje del dueño sobre la mitad del gasto.
+                    'compartido' => $gasto->a_cargo_de === ACargoDe::Mitades,
                 ];
             }
         }

@@ -176,7 +176,11 @@ class ExpenseController extends Controller
                 ->with('error', $mensaje.' Pero no se pudo repartir: '.$e->getMessage());
         }
 
-        return to_route('gastos.index')->with('success', $mensaje.' Repartido entre los propietarios.');
+        $detalle = $expense->a_cargo_de === ACargoDe::Mitades
+            ? ' La mitad se repartió entre los propietarios.'
+            : ' Repartido entre los propietarios.';
+
+        return to_route('gastos.index')->with('success', $mensaje.$detalle);
     }
 
     /** @return array<string, mixed> */

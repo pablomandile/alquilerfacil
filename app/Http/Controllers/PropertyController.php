@@ -113,10 +113,13 @@ class PropertyController extends Controller
             '0'
         ), '0', 2);
 
+        // De los extraordinarios que absorben los dueños: el gasto entero si va
+        // a su cargo, la mitad si es compartido con el inquilino.
         $gastosExtraordinarios = bcadd((string) $property->expenses()
             ->where('tipo', TipoGasto::Extraordinario)
-            ->where('a_cargo_de', ACargoDe::Propietarios)
-            ->sum('monto'), '0', 2);
+            ->conReparto()
+            ->get(['id', 'monto', 'a_cargo_de'])
+            ->reduce(fn (string $acc, Expense $g) => bcadd($acc, $g->montoARepartir(), 2), '0'), '0', 2);
 
         // Cuadro del mes para pasarle al inquilino: el alquiler más los gastos a
         // su cargo que vencen en el mes en curso. Sólo si hay contrato vigente.
@@ -300,16 +303,20 @@ class PropertyController extends Controller
             $venceAlquiler = $mes->copy()->day($dia);
         }
 
+        // Gastos a cargo del inquilino, enteros o a medias, que vencen este mes.
+        // En los compartidos se informa sólo su mitad.
         $gastos = $contrato->property->expenses()
-            ->where('a_cargo_de', ACargoDe::Inquilino)
+            ->whereIn('a_cargo_de', [ACargoDe::Inquilino, ACargoDe::Mitades])
             ->whereNotNull('vencimiento')
             ->whereMonth('vencimiento', $mes->month)
             ->whereYear('vencimiento', $mes->year)
             ->orderBy('vencimiento')
             ->get()
             ->map(fn (Expense $g) => [
-                'concepto' => $g->descripcion ?: $g->categoria->label(),
-                'monto' => $g->monto,
+                'concepto' => $g->a_cargo_de === ACargoDe::Mitades
+                    ? ($g->descripcion ?: $g->categoria->label()).' (mitad)'
+                    : ($g->descripcion ?: $g->categoria->label()),
+                'monto' => $g->montoDelInquilino(),
                 'vencimiento' => $g->vencimiento?->format('d/m/Y'),
             ]);
 

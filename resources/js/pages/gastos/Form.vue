@@ -279,6 +279,13 @@ function enviar() {
                     >
                         Se va a repartir entre los dueños según su porcentaje.
                     </p>
+                    <p
+                        v-else-if="form.a_cargo_de === 'mitades'"
+                        class="text-xs text-emerald-600 dark:text-emerald-400"
+                    >
+                        La mitad la paga el inquilino; la otra mitad se reparte
+                        entre los dueños según su porcentaje.
+                    </p>
                 </div>
 
                 <div

@@ -44,6 +44,14 @@ class ExpenseFactory extends Factory
         ]);
     }
 
+    /** Gasto compartido a medias entre el inquilino y los propietarios. */
+    public function compartido(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'a_cargo_de' => ACargoDe::Mitades,
+        ]);
+    }
+
     public function pagado(): static
     {
         return $this->state(fn (array $attributes) => [

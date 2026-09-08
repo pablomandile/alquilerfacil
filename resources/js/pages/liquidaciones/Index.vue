@@ -24,6 +24,7 @@ type Liquidacion = {
         porcentaje: number;
         monto: string;
         pagado: boolean;
+        compartido: boolean;
     }>;
     facturado: string;
     cobrado: string;
@@ -158,7 +159,15 @@ function cambiarPeriodo() {
                             class="flex items-center justify-between gap-3 py-2 first:pt-0"
                         >
                             <div class="min-w-0">
-                                <p class="truncate">{{ g.descripcion }}</p>
+                                <p class="truncate">
+                                    {{ g.descripcion }}
+                                    <span
+                                        v-if="g.compartido"
+                                        class="text-muted-foreground text-xs"
+                                    >
+                                        (mitad)
+                                    </span>
+                                </p>
                                 <p
                                     class="text-muted-foreground truncate text-xs"
                                 >

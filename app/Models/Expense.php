@@ -101,10 +101,33 @@ class Expense extends Model implements Repartible
         return $this->property;
     }
 
-    /** @return numeric-string */
+    /**
+     * Lo que se reparte entre los propietarios: el gasto entero si va a su
+     * cargo, la mitad si es compartido con el inquilino.
+     *
+     * @return numeric-string
+     */
     public function montoARepartir(): string
     {
-        return $this->monto;
+        return $this->a_cargo_de === ACargoDe::Mitades
+            ? bcdiv($this->monto, '2', 2)
+            : $this->monto;
+    }
+
+    /**
+     * Lo que soporta el inquilino: el gasto entero, nada, o —si es compartido—
+     * lo que queda tras la mitad de los dueños (así el centavo impar, si lo
+     * hay, no se pierde ni se cuenta dos veces).
+     *
+     * @return numeric-string
+     */
+    public function montoDelInquilino(): string
+    {
+        return match ($this->a_cargo_de) {
+            ACargoDe::Inquilino => $this->monto,
+            ACargoDe::Propietarios => '0.00',
+            ACargoDe::Mitades => bcsub($this->monto, $this->montoARepartir(), 2),
+        };
     }
 
     /**
@@ -135,12 +158,15 @@ class Expense extends Model implements Repartible
     }
 
     /**
+     * Gastos con reparto entre los dueños: los que van a su cargo y los
+     * compartidos a medias con el inquilino.
+     *
      * @param  Builder<Expense>  $query
      * @return Builder<Expense>
      */
-    public function scopeACargoDeLosPropietarios(Builder $query): Builder
+    public function scopeConReparto(Builder $query): Builder
     {
-        return $query->where('a_cargo_de', ACargoDe::Propietarios);
+        return $query->whereIn('a_cargo_de', [ACargoDe::Propietarios, ACargoDe::Mitades]);
     }
 
     public function seRepartEntrePropietarios(): bool

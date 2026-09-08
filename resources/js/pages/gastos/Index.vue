@@ -236,7 +236,11 @@ function verDocumento(d: Documento) {
                 <!-- Reparto entre dueños, cuando el gasto va a cargo de ellos -->
                 <div v-if="g.reparto.length" class="mt-3 border-t pt-3">
                     <p class="text-muted-foreground mb-1.5 text-xs">
-                        Repartido entre los propietarios
+                        {{
+                            g.a_cargo_de === 'mitades'
+                                ? 'La mitad, repartida entre los propietarios (la otra mitad la paga el inquilino)'
+                                : 'Repartido entre los propietarios'
+                        }}
                     </p>
                     <ul class="grid gap-1 text-sm sm:grid-cols-3">
                         <li
