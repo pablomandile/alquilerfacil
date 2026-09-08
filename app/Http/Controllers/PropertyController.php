@@ -17,6 +17,7 @@ use App\Models\Expense;
 use App\Models\Owner;
 use App\Models\Property;
 use App\Models\PropertyDocument;
+use App\Models\TenantMessage;
 use App\Support\Opciones;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -312,6 +313,12 @@ class PropertyController extends Controller
                 'vencimiento' => $g->vencimiento?->format('d/m/Y'),
             ]);
 
+        // ¿Ya se le mandó el aviso de este mes?
+        $envio = TenantMessage::query()
+            ->where('property_id', $contrato->property_id)
+            ->delPeriodo($mes)
+            ->first();
+
         return [
             'inquilino' => $contrato->tenant->nombre,
             'telefono' => $contrato->tenant->telefono,
@@ -322,6 +329,10 @@ class PropertyController extends Controller
                 'vencimiento' => $venceAlquiler->format('d/m/Y'),
             ],
             'gastos' => $gastos,
+            'envio' => [
+                'enviado' => $envio !== null,
+                'fecha' => $envio?->enviado_at->format('d/m/Y'),
+            ],
         ];
     }
 

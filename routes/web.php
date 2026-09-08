@@ -18,6 +18,7 @@ use App\Http\Controllers\PropertyDocumentController;
 use App\Http\Controllers\RentAdjustmentController;
 use App\Http\Controllers\RentChargeController;
 use App\Http\Controllers\TenantController;
+use App\Http\Controllers\TenantMessageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -85,6 +86,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('documentos.show');
     Route::delete('documentos/{document}', [ContractDocumentController::class, 'destroy'])
         ->name('documentos.destroy');
+
+    // Aviso mensual al inquilino (alquiler + gastos): marcarlo enviado o
+    // volverlo a pendiente.
+    Route::patch('propiedades/{property}/mensaje-inquilino', [TenantMessageController::class, 'update'])
+        ->whereNumber('property')->name('mensaje-inquilino.actualizar');
 
     // Documentos de la propiedad: la escritura, el reglamento de copropiedad,
     // planos, impuestos, etc. Mismo criterio de permisos que el contrato.

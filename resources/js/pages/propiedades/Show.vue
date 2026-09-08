@@ -21,10 +21,19 @@ import VisorArchivo, {
     type ArchivoVisible,
 } from '@/components/VisorArchivo.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { pesos, tamano } from '@/lib/formato';
 import rutasContratos from '@/routes/contratos';
+import rutaMensajeInquilino from '@/routes/mensaje-inquilino';
 import rutasPropiedades from '@/routes/propiedades';
 import rutasPropiedadDocumentos from '@/routes/propiedades/documentos';
 
@@ -130,6 +139,7 @@ const props = defineProps<{
             monto: string;
             vencimiento: string | null;
         }>;
+        envio: { enviado: boolean; fecha: string | null };
     } | null;
 }>();
 
@@ -238,6 +248,53 @@ const linkWhatsapp = computed(() => {
 
     return `https://wa.me/${tel.startsWith('54') ? tel : `54${tel}`}?text=${texto}`;
 });
+
+/* Estado del aviso: enviado o pendiente. Marcar enviado es directo; volver a
+   pendiente pide la contraseña, para no desmarcar por error. */
+const enviado = computed(() => props.mensajeInquilino?.envio.enviado ?? false);
+
+const etiquetaEstado = computed(() => {
+    const m = props.mensajeInquilino;
+    if (!m) return '';
+    if (!m.envio.enviado) return `${m.mes} · Pendiente`;
+    return m.envio.fecha
+        ? `${m.mes} · Enviado ${m.envio.fecha}`
+        : `${m.mes} · Enviado`;
+});
+
+function marcarEnviado() {
+    router.patch(
+        rutaMensajeInquilino.actualizar(props.propiedad.id).url,
+        { estado: 'enviado' },
+        { preserveScroll: true },
+    );
+}
+
+const dialogoPendiente = ref(false);
+const formPendiente = useForm({ password: '' });
+
+function abrirVolverAPendiente() {
+    formPendiente.reset();
+    formPendiente.clearErrors();
+    dialogoPendiente.value = true;
+}
+
+function confirmarPendiente() {
+    formPendiente
+        .transform((datos) => ({ ...datos, estado: 'pendiente' }))
+        .patch(rutaMensajeInquilino.actualizar(props.propiedad.id).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                dialogoPendiente.value = false;
+                formPendiente.reset();
+            },
+        });
+}
+
+function alTocarEstado() {
+    if (enviado.value) abrirVolverAPendiente();
+    else marcarEnviado();
+}
 </script>
 
 <template>
@@ -537,6 +594,27 @@ const linkWhatsapp = computed(() => {
                             WhatsApp
                         </a>
                     </Button>
+
+                    <!-- Estado del aviso del mes: un clic lo cambia. Volver a
+                         pendiente pide la contraseña. -->
+                    <button
+                        v-if="mensajeInquilino"
+                        type="button"
+                        class="ml-auto inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium first-letter:uppercase"
+                        :class="
+                            enviado
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900'
+                                : 'bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-900'
+                        "
+                        :title="`Aviso de ${mensajeInquilino.mes}`"
+                        @click="alTocarEstado"
+                    >
+                        <span
+                            class="size-1.5 rounded-full"
+                            :class="enviado ? 'bg-emerald-500' : 'bg-amber-500'"
+                        />
+                        {{ etiquetaEstado }}
+                    </button>
                 </div>
 
                 <details class="border-t px-4 py-3 text-sm">
@@ -743,4 +821,47 @@ const linkWhatsapp = computed(() => {
     </div>
 
     <VisorArchivo v-model:archivo="visor" />
+
+    <Dialog v-model:open="dialogoPendiente">
+        <DialogContent class="sm:max-w-sm">
+            <DialogHeader>
+                <DialogTitle>Volver el aviso a pendiente</DialogTitle>
+                <DialogDescription>
+                    Ingresá tu contraseña para confirmar. Es para no desmarcar
+                    por error un aviso que ya mandaste.
+                </DialogDescription>
+            </DialogHeader>
+
+            <form class="grid gap-3" @submit.prevent="confirmarPendiente">
+                <div class="grid gap-1.5">
+                    <Label for="pw-pendiente">Contraseña</Label>
+                    <Input
+                        id="pw-pendiente"
+                        v-model="formPendiente.password"
+                        type="password"
+                        autocomplete="current-password"
+                    />
+                    <InputError :message="formPendiente.errors.password" />
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="dialogoPendiente = false"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="submit"
+                        :disabled="
+                            formPendiente.processing || !formPendiente.password
+                        "
+                    >
+                        Volver a pendiente
+                    </Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
 </template>
