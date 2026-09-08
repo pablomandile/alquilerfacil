@@ -105,6 +105,20 @@ class Property extends Model
     }
 
     /**
+     * Seguimiento de temas con la administración del inmueble. Los abiertos
+     * primero ('abierto' < 'resuelto' alfabéticamente), y dentro, el último
+     * planteado arriba.
+     *
+     * @return HasMany<AdminThread, $this>
+     */
+    public function adminThreads(): HasMany
+    {
+        return $this->hasMany(AdminThread::class)
+            ->orderBy('estado')
+            ->latest();
+    }
+
+    /**
      * Limita la consulta a lo que el usuario tiene permitido ver.
      *
      * El admin ve todo. Un propietario ve sólo las propiedades donde figura como

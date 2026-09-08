@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\AdminThreadAttachmentController;
+use App\Http\Controllers\AdminThreadController;
+use App\Http\Controllers\AdminThreadEntryController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractDocumentController;
@@ -90,6 +93,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->whereNumber('document')->name('propiedades.documentos.show');
     Route::delete('propiedades/documentos/{document}', [PropertyDocumentController::class, 'destroy'])
         ->whereNumber('document')->name('propiedades.documentos.destroy');
+
+    // Seguimiento con la administración del inmueble: temas (reclamos, problemas,
+    // consultas) con entradas fechadas y adjuntos.
+    Route::post('propiedades/{property}/administracion', [AdminThreadController::class, 'store'])
+        ->whereNumber('property')->name('administracion.temas.store');
+    Route::patch('propiedades/administracion/{thread}', [AdminThreadController::class, 'update'])
+        ->whereNumber('thread')->name('administracion.temas.update');
+    Route::delete('propiedades/administracion/{thread}', [AdminThreadController::class, 'destroy'])
+        ->whereNumber('thread')->name('administracion.temas.destroy');
+    Route::post('propiedades/administracion/{thread}/entradas', [AdminThreadEntryController::class, 'store'])
+        ->whereNumber('thread')->name('administracion.entradas.store');
+    Route::delete('propiedades/administracion/entradas/{entry}', [AdminThreadEntryController::class, 'destroy'])
+        ->whereNumber('entry')->name('administracion.entradas.destroy');
+    Route::get('propiedades/administracion/adjuntos/{attachment}', [AdminThreadAttachmentController::class, 'show'])
+        ->whereNumber('attachment')->name('administracion.adjuntos.show');
+    Route::delete('propiedades/administracion/adjuntos/{attachment}', [AdminThreadAttachmentController::class, 'destroy'])
+        ->whereNumber('attachment')->name('administracion.adjuntos.destroy');
 
     Route::resource('gastos', ExpenseController::class)
         ->parameters(['gastos' => 'expense'])

@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ACargoDe;
+use App\Enums\CategoriaTemaAdmin;
 use App\Enums\EstadoPropiedad;
 use App\Enums\TipoDocumentoPropiedad;
 use App\Enums\TipoGasto;
 use App\Enums\TipoPropiedad;
 use App\Http\Requests\PropertyRequest;
+use App\Models\AdminThread;
+use App\Models\AdminThreadAttachment;
+use App\Models\AdminThreadEntry;
 use App\Models\Contract;
 use App\Models\Owner;
 use App\Models\Property;
@@ -66,6 +70,8 @@ class PropertyController extends Controller
             'contracts.charges.payments',
             'expenses' => fn ($q) => $q->orderByDesc('periodo')->limit(20),
             'documents.uploader:id,name',
+            'adminThreads.entries.attachments',
+            'adminThreads.entries.registrador:id,name',
         ]);
 
         // Totalización del alquiler de la propiedad: lo facturado y lo cobrado en
@@ -159,6 +165,28 @@ class PropertyController extends Controller
                     'subido_por' => $d->uploader?->name,
                     'fecha' => $d->created_at?->format('d/m/Y'),
                 ]),
+                'administracion' => $property->adminThreads->map(fn (AdminThread $t) => [
+                    'id' => $t->id,
+                    'titulo' => $t->titulo,
+                    'categoria' => $t->categoria->value,
+                    'categoria_label' => $t->categoria->label(),
+                    'estado' => $t->estado->value,
+                    'estado_label' => $t->estado->label(),
+                    'creado' => $t->created_at?->format('d/m/Y'),
+                    'entradas' => $t->entries->map(fn (AdminThreadEntry $e) => [
+                        'id' => $e->id,
+                        'fecha' => $e->fecha->format('d/m/Y'),
+                        'fecha_iso' => $e->fecha->toDateString(),
+                        'detalle' => $e->detalle,
+                        'registrado_por' => $e->registrador?->name,
+                        'adjuntos' => $e->attachments->map(fn (AdminThreadAttachment $a) => [
+                            'id' => $a->id,
+                            'nombre' => $a->nombre_original,
+                            'tamano' => $a->tamano,
+                            'mime' => $a->mime,
+                        ])->all(),
+                    ])->all(),
+                ]),
                 'totales' => [
                     'por_contrato' => $totalesPorContrato,
                     'facturado' => $facturadoTotal,
@@ -168,6 +196,7 @@ class PropertyController extends Controller
                 ],
             ],
             'tiposDocumento' => Opciones::de(TipoDocumentoPropiedad::class),
+            'categoriasTemaAdmin' => Opciones::de(CategoriaTemaAdmin::class),
         ]);
     }
 

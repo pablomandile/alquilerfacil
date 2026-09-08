@@ -37,6 +37,11 @@ const colores: Record<string, string> = {
     finalizado:
         'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
     rescindido: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300',
+    // Seguimiento con la administración
+    abierto:
+        'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+    resuelto:
+        'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 };
 
 const clase = computed(

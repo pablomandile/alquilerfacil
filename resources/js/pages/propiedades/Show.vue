@@ -5,6 +5,7 @@ import { computed, ref } from 'vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import SeguimientoAdministracion from '@/components/SeguimientoAdministracion.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +63,28 @@ const props = defineProps<{
             subido_por: string | null;
             fecha: string | null;
         }>;
+        administracion: Array<{
+            id: number;
+            titulo: string;
+            categoria: string;
+            categoria_label: string;
+            estado: string;
+            estado_label: string;
+            creado: string | null;
+            entradas: Array<{
+                id: number;
+                fecha: string;
+                fecha_iso: string;
+                detalle: string;
+                registrado_por: string | null;
+                adjuntos: Array<{
+                    id: number;
+                    nombre: string;
+                    tamano: number;
+                    mime: string;
+                }>;
+            }>;
+        }>;
         totales: {
             por_contrato: Array<{
                 id: number;
@@ -78,6 +101,7 @@ const props = defineProps<{
         };
     };
     tiposDocumento: Array<{ value: string; label: string }>;
+    categoriasTemaAdmin: Array<{ value: string; label: string }>;
 }>();
 
 defineOptions({
@@ -403,6 +427,14 @@ function borrarDocumento(id: number) {
                 </table>
             </div>
         </section>
+
+        <!-- Seguimiento con la administración: reclamos, problemas, consultas -->
+        <SeguimientoAdministracion
+            :propiedad-id="propiedad.id"
+            :temas="propiedad.administracion"
+            :categorias="categoriasTemaAdmin"
+            :puede-gestionar="puedeGestionar"
+        />
 
         <!-- Documentos: la escritura, el reglamento de copropiedad, planos, etc. -->
         <section class="space-y-3">
