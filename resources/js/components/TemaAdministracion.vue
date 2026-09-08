@@ -125,7 +125,7 @@ function verAdjunto(a: Adjunto) {
         <!-- Cabecera: siempre visible, clic para desplegar -->
         <button
             type="button"
-            class="hover:bg-accent/40 flex w-full items-center gap-3 px-4 py-3 text-left"
+            class="hover:bg-accent/40 flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left"
             @click="abierto = !abierto"
         >
             <ChevronDown
@@ -183,7 +183,7 @@ function verAdjunto(a: Adjunto) {
                             />
                             <button
                                 type="button"
-                                class="truncate hover:underline"
+                                class="cursor-pointer truncate hover:underline"
                                 @click="verAdjunto(a)"
                             >
                                 {{ a.nombre }}
@@ -193,7 +193,7 @@ function verAdjunto(a: Adjunto) {
                             </span>
                             <button
                                 type="button"
-                                class="text-muted-foreground hover:text-foreground shrink-0"
+                                class="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
                                 @click="verAdjunto(a)"
                             >
                                 <Eye class="size-3.5" />
@@ -213,7 +213,7 @@ function verAdjunto(a: Adjunto) {
                             <button
                                 v-if="puedeGestionar"
                                 type="button"
-                                class="text-muted-foreground hover:text-foreground shrink-0"
+                                class="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
                                 @click="borrarAdjunto(a.id)"
                             >
                                 <Trash2 class="size-3.5" />

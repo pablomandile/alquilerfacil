@@ -437,10 +437,12 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
                     <FileText class="text-muted-foreground size-5 shrink-0" />
                     <button
                         type="button"
-                        class="min-w-0 flex-1 text-left"
+                        class="group min-w-0 flex-1 cursor-pointer text-left"
                         @click="verDocumento(d)"
                     >
-                        <p class="font-medium">{{ d.tipo_label }}</p>
+                        <p class="font-medium group-hover:underline">
+                            {{ d.tipo_label }}
+                        </p>
                         <p class="text-muted-foreground truncate text-xs">
                             {{ d.nombre
                             }}<span v-if="d.nota"> · {{ d.nota }}</span>

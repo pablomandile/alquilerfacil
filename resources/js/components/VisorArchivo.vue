@@ -73,13 +73,13 @@ onUnmounted(router.on('navigate', () => (archivo.value = null)));
                         <a
                             v-if="archivo"
                             :href="archivo.descargarUrl"
-                            class="rounded-md p-2 hover:bg-white/15"
+                            class="cursor-pointer rounded-md p-2 hover:bg-white/15"
                         >
                             <Download class="size-5" />
                             <span class="sr-only">Descargar</span>
                         </a>
                         <DialogClose
-                            class="rounded-md p-2 hover:bg-white/15"
+                            class="cursor-pointer rounded-md p-2 hover:bg-white/15"
                             aria-label="Cerrar"
                         >
                             <X class="size-5" />
