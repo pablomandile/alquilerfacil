@@ -3,6 +3,75 @@
 Administración de propiedades en alquiler: contratos, actualización del alquiler
 por índice oficial, gastos, cobranzas y reparto entre varios dueños.
 
+## Funcionalidades
+
+**Propiedades y contratos**
+
+- Alta/baja de propiedades con tipo, dirección, ambientes, superficie, partida y
+  estado (disponible / alquilada / en refacción).
+- Varios dueños por propiedad, cada uno con su porcentaje (suma 100).
+- Contratos con inquilino, vigencia, monto, depósito, día de vencimiento, índice
+  y frecuencia de ajuste.
+- Documentos adjuntos por propiedad (escritura, reglamento, planos, impuestos…) y
+  por contrato (contrato firmado, garantía, pagaré, seguro de caución…). Van a un
+  disco privado y se descargan detrás de la policy.
+
+**Actualización del alquiler por índice**
+
+- Índice **IPC** (INDEC) o **ICL** (BCRA) por contrato; los valores se bajan
+  solos de las APIs oficiales.
+- La app **calcula y propone**; aplicar el aumento es siempre decisión del
+  usuario, que puede editar el monto antes de confirmar.
+- Rechazar una propuesta con motivo; corregir el importe del último ajuste ya
+  aplicado (para el redondeo que quedó pendiente).
+- Contempla el desfasaje de publicación del INDEC (ver más abajo).
+
+**Cobranzas**
+
+- Emisión del cargo de alquiler del mes, manual o por scheduler, con el monto
+  congelado al emitirlo.
+- Pagos totales o parciales con medio de pago; estados pendiente / parcial /
+  pagado / vencido.
+- Borrar un cargo emitido para corregirlo y volver a emitirlo.
+
+**Gastos**
+
+- Servicios, expensas, impuestos y extraordinarios, a cargo del inquilino, de los
+  propietarios, o **a medias (50 / 50)**.
+- Adjuntar la factura / expensa del período y el comprobante de pago.
+- Los que van a los dueños —o la mitad, si es compartido— se reparten por
+  porcentaje.
+
+**Reparto y liquidaciones**
+
+- El reparto entre dueños se **persiste** (no se recalcula) y las partes suman el
+  total exacto (ver más abajo).
+- Liquidación mensual por dueño: su parte del alquiler cobrado menos su parte de
+  los gastos a cargo de los propietarios.
+- Ficha de la propiedad con el total facturado, cobrado y el neto.
+
+**Aviso mensual al inquilino**
+
+- Cuadro del mes (alquiler + gastos que vencen) y mensaje listo para copiar y
+  pegar en WhatsApp.
+- Estado enviado / pendiente del aviso por mes; volverlo a pendiente pide la
+  contraseña, para no desmarcar por error.
+
+**Seguimiento con la administración**
+
+- Temas tratados con el consorcio (reclamos, problemas, consultas) con entradas
+  fechadas, adjuntos y estado abierto / resuelto.
+
+**Lo demás**
+
+- Visor de imágenes y PDF a pantalla completa.
+- Panel con lo facturado y cobrado del mes, los ajustes por revisar y los gastos
+  por vencer.
+- PWA instalable, con pantalla de "sin conexión".
+- Ingreso con email y contraseña, con Google (OAuth) o con passkey; 2FA opcional.
+- Interfaz en español rioplatense; modo claro y oscuro.
+- Dos roles (ver "Roles" más abajo).
+
 ## Puesta en marcha
 
 ```bash
@@ -20,9 +89,15 @@ php artisan indices:sincronizar
 npm run dev
 ```
 
-El seeder deja un administrador (`pablo.mandile@gmail.com` / `password`), una
-copropietaria que co-administra dos de las propiedades (`laura@example.com` /
-`password`) y tres propiedades con contratos, gastos y cobranzas.
+El seeder deja tres propiedades con contratos, gastos, cobranzas en varios
+estados, ajustes (uno aplicado y otro pendiente), seguimiento con la
+administración e índices cargados, más estos usuarios:
+
+| Usuario                     | Contraseña | Rol                                               |
+| --------------------------- | ---------- | ------------------------------------------------- |
+| `pablo.mandile@gmail.com`   | `password` | Administrador                                     |
+| `demo@alquilerfacil.com.ar` | `demo1234` | Administrador (para mostrar la app)               |
+| `laura@example.com`         | `password` | Propietaria, co-administra dos de las propiedades |
 
 ## Cómo se actualiza el alquiler
 
@@ -127,14 +202,16 @@ Los tres son idempotentes: volver a correrlos no duplica nada.
 ## Tests
 
 ```bash
-php artisan test          # 92 tests
+php artisan test          # 166 tests
 npm run check             # formato y lint
 ```
 
 Los que importan: `CalculadorDeAjusteTest` (incluye el desfasaje de publicación),
-`RepartoEntreDuenosTest` (las partes suman el total exacto), `AccesoDeDuenoTest`
-(un propietario co-administra lo suyo y no toca lo ajeno; el vínculo por email) y
-`CobranzasTest` (pagos parciales).
+`RepartoEntreDuenosTest` y `GastoCompartidoTest` (las partes suman el total
+exacto, también con el gasto a medias), `AccesoDeDuenoTest` (un propietario
+co-administra lo suyo y no toca lo ajeno; el vínculo por email), `CobranzasTest`
+(pagos parciales) y los de adjuntos (`DocumentosDe*Test`, disco privado detrás de
+la policy).
 
 Las APIs externas se testean con `Http::fake()`; los tests no pegan a INDEC ni al
 BCRA.
