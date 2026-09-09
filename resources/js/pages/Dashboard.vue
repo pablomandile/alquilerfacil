@@ -48,6 +48,7 @@ defineProps<{
         }>;
         facturado: string;
         cobrado: string;
+        gastos_ordinarios: string;
         gastos_extraordinarios: string;
         neto: string;
     };
@@ -258,6 +259,19 @@ defineProps<{
                         <dt class="text-muted-foreground">Cobrado</dt>
                         <dd class="tabular-nums">
                             {{ pesos(alquileres.cobrado) }}
+                        </dd>
+                    </div>
+                    <div
+                        v-if="Number(alquileres.gastos_ordinarios) > 0"
+                        class="flex items-center justify-between gap-3"
+                    >
+                        <dt class="text-muted-foreground">
+                            Gastos ordinarios a cargo de los dueños
+                        </dt>
+                        <dd
+                            class="text-rose-600 tabular-nums dark:text-rose-400"
+                        >
+                            −{{ pesos(alquileres.gastos_ordinarios) }}
                         </dd>
                     </div>
                     <div

@@ -38,11 +38,17 @@ class FichaDePropiedadTest extends TestCase
         $c3 = RentCharge::factory()->conMonto(200000)->create(['contract_id' => $actual->id, 'periodo' => '2025-06-01']);
         Payment::factory()->de(200000)->create(['rent_charge_id' => $c3->id]);
 
-        // Sólo el extraordinario a cargo de los propietarios resta del neto.
+        // Del neto restan los gastos que absorben los dueños: el extraordinario
+        // (30.000) y los ordinarios a su cargo (20.000 entero + la mitad de uno
+        // compartido de 8.000). Los del inquilino y los sin reparto no cuentan.
         Expense::factory()->extraordinario()->create(['property_id' => $propiedad->id, 'monto' => 30000]);
         Expense::factory()->extraordinario()->create([
             'property_id' => $propiedad->id, 'monto' => 50000, 'a_cargo_de' => ACargoDe::Inquilino,
         ]);
+        Expense::factory()->create([
+            'property_id' => $propiedad->id, 'monto' => 20000, 'a_cargo_de' => ACargoDe::Propietarios,
+        ]);
+        Expense::factory()->compartido()->create(['property_id' => $propiedad->id, 'monto' => 8000]);
         Expense::factory()->create(['property_id' => $propiedad->id, 'monto' => 12345]);
 
         $this->actingAs($admin)
@@ -51,8 +57,9 @@ class FichaDePropiedadTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('propiedad.totales.facturado', '400000.00')
                 ->where('propiedad.totales.cobrado', '360000.00')
+                ->where('propiedad.totales.gastos_ordinarios', '24000.00')
                 ->where('propiedad.totales.gastos_extraordinarios', '30000.00')
-                ->where('propiedad.totales.neto', '330000.00')
+                ->where('propiedad.totales.neto', '306000.00')
                 ->has('propiedad.totales.por_contrato', 2)
                 // Ordenados por fecha de inicio: primero el vigente.
                 ->where('propiedad.totales.por_contrato.0.id', $actual->id)
@@ -75,6 +82,8 @@ class FichaDePropiedadTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('propiedad.totales.facturado', '0.00')
                 ->where('propiedad.totales.cobrado', '0.00')
+                ->where('propiedad.totales.gastos_ordinarios', '0.00')
+                ->where('propiedad.totales.gastos_extraordinarios', '0.00')
                 ->where('propiedad.totales.neto', '0.00')
                 ->has('propiedad.totales.por_contrato', 0)
             );

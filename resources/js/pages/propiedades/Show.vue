@@ -120,6 +120,7 @@ const props = defineProps<{
             }>;
             facturado: string;
             cobrado: string;
+            gastos_ordinarios: string;
             gastos_extraordinarios: string;
             neto: string;
         };
@@ -153,6 +154,13 @@ defineOptions({
 const page = usePage();
 const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
+
+/* Lo que los dueños ponen de su bolsillo: ordinarios + extraordinarios. */
+const gastosDeLosDuenos = computed(
+    () =>
+        Number(props.propiedad.totales.gastos_ordinarios) +
+        Number(props.propiedad.totales.gastos_extraordinarios),
+);
 
 /* Documentos de la propiedad: la escritura, el reglamento, planos, etc. Se
    suben desde acá, sin pasar por el form de edición. */
@@ -342,8 +350,8 @@ function alTocarEstado() {
                     Number(propiedad.totales.neto) < 0 ? 'alerta' : 'normal'
                 "
                 :detalle="
-                    Number(propiedad.totales.gastos_extraordinarios) > 0
-                        ? `${pesos(propiedad.totales.gastos_extraordinarios)} en gastos extraordinarios`
+                    gastosDeLosDuenos > 0
+                        ? `${pesos(gastosDeLosDuenos)} en gastos de los dueños`
                         : undefined
                 "
                 tinte="cielo"
@@ -532,13 +540,22 @@ function alTocarEstado() {
                     </div>
                     <div class="flex items-center justify-between gap-3">
                         <dt class="text-muted-foreground">
+                            Gastos ordinarios a cargo de los dueños
+                        </dt>
+                        <dd
+                            class="text-rose-600 tabular-nums dark:text-rose-400"
+                        >
+                            −{{ pesos(propiedad.totales.gastos_ordinarios) }}
+                        </dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-muted-foreground">
                             Gastos extraordinarios
                         </dt>
                         <dd
                             class="text-rose-600 tabular-nums dark:text-rose-400"
                         >
-                            −
-                            {{
+                            −{{
                                 pesos(propiedad.totales.gastos_extraordinarios)
                             }}
                         </dd>

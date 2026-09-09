@@ -46,11 +46,15 @@ class DashboardTest extends TestCase
             'property_id' => $rivadavia->id, 'monto' => 30000, 'a_cargo_de' => ACargoDe::Propietarios,
         ]);
 
-        // Belgrano: facturado 100.000, cobrado 50.000 -> neto 50.000.
+        // Belgrano: facturado 100.000, cobrado 50.000, 15.000 de gastos
+        // ordinarios a cargo de los dueños -> neto 35.000.
         $belgrano = Property::factory()->create(['alias' => 'Belgrano']);
         $c2 = Contract::factory()->create(['property_id' => $belgrano->id]);
         $cargo2 = RentCharge::factory()->conMonto(100000)->create(['contract_id' => $c2->id]);
         Payment::factory()->de(50000)->create(['rent_charge_id' => $cargo2->id]);
+        Expense::factory()->create([
+            'property_id' => $belgrano->id, 'monto' => 15000, 'a_cargo_de' => ACargoDe::Propietarios,
+        ]);
 
         // Sin movimiento: no aparece en la tarjeta.
         Property::factory()->create(['alias' => 'Cochera']);
@@ -65,11 +69,12 @@ class DashboardTest extends TestCase
                 ->where('alquileres.por_propiedad.0.cobrado', '200000.00')
                 ->where('alquileres.por_propiedad.0.neto', '170000.00')
                 ->where('alquileres.por_propiedad.1.alias', 'Belgrano')
-                ->where('alquileres.por_propiedad.1.neto', '50000.00')
+                ->where('alquileres.por_propiedad.1.neto', '35000.00')
                 ->where('alquileres.facturado', '300000.00')
                 ->where('alquileres.cobrado', '250000.00')
+                ->where('alquileres.gastos_ordinarios', '15000.00')
                 ->where('alquileres.gastos_extraordinarios', '30000.00')
-                ->where('alquileres.neto', '220000.00')
+                ->where('alquileres.neto', '205000.00')
             );
     }
 

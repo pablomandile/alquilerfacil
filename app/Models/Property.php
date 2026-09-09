@@ -161,15 +161,14 @@ class Property extends Model
 
     /**
      * Totalización histórica del alquiler: lo facturado y lo cobrado en todos
-     * los contratos de la propiedad, y el neto contra los gastos
-     * extraordinarios que absorben los propietarios (el gasto entero si va a su
-     * cargo, la mitad si es compartido con el inquilino).
+     * los contratos de la propiedad, y el neto contra los gastos que absorben
+     * los propietarios (el gasto entero si va a su cargo, la mitad si es
+     * compartido con el inquilino), separados en ordinarios y extraordinarios.
      *
-     * Aprovecha `contracts.charges.payments` si están cargadas; los
-     * extraordinarios los consulta aparte para no depender de un `expenses`
-     * acotado.
+     * Aprovecha `contracts.charges.payments` si están cargadas; los gastos de
+     * los dueños los consulta aparte para no depender de un `expenses` acotado.
      *
-     * @return array{facturado: numeric-string, cobrado: numeric-string, gastos_extraordinarios: numeric-string, neto: numeric-string}
+     * @return array{facturado: numeric-string, cobrado: numeric-string, gastos_ordinarios: numeric-string, gastos_extraordinarios: numeric-string, neto: numeric-string}
      */
     public function totalesDeAlquiler(): array
     {
@@ -186,17 +185,26 @@ class Property extends Model
             }
         }
 
-        $gastosExtraordinarios = $this->expenses()
-            ->where('tipo', TipoGasto::Extraordinario)
+        $gastosDeLosDuenos = $this->expenses()
             ->conReparto()
-            ->get(['id', 'monto', 'a_cargo_de'])
+            ->get(['id', 'tipo', 'monto', 'a_cargo_de']);
+
+        $esExtraordinario = fn (Expense $g) => $g->tipo === TipoGasto::Extraordinario;
+
+        $extraordinarios = $gastosDeLosDuenos
+            ->filter($esExtraordinario)
+            ->reduce(fn (string $acc, Expense $g) => bcadd($acc, $g->montoARepartir(), 2), '0');
+
+        $ordinarios = $gastosDeLosDuenos
+            ->reject($esExtraordinario)
             ->reduce(fn (string $acc, Expense $g) => bcadd($acc, $g->montoARepartir(), 2), '0');
 
         return [
             'facturado' => bcadd($facturado, '0', 2),
             'cobrado' => bcadd($cobrado, '0', 2),
-            'gastos_extraordinarios' => bcadd($gastosExtraordinarios, '0', 2),
-            'neto' => bcsub($cobrado, $gastosExtraordinarios, 2),
+            'gastos_ordinarios' => bcadd($ordinarios, '0', 2),
+            'gastos_extraordinarios' => bcadd($extraordinarios, '0', 2),
+            'neto' => bcsub(bcsub($cobrado, $extraordinarios, 2), $ordinarios, 2),
         ];
     }
 }

@@ -36,15 +36,17 @@ class DashboardController extends Controller
         }
 
         // Acumulado del alquiler por propiedad: lo cobrado y el neto contra los
-        // gastos extraordinarios, como en la ficha de cada propiedad. Sólo las
-        // que ya tienen movimiento.
+        // gastos de los dueños, como en la ficha de cada propiedad. Sólo las que
+        // ya tienen movimiento.
         $totalesPorPropiedad = Property::query()
             ->visiblePara($usuario)
             ->with('contracts.charges.payments')
             ->orderBy('alias')
             ->get()
             ->map(fn (Property $p) => [...$p->totalesDeAlquiler(), 'id' => $p->id, 'alias' => $p->alias])
-            ->filter(fn (array $t) => $t['facturado'] !== '0.00' || $t['gastos_extraordinarios'] !== '0.00')
+            ->filter(fn (array $t) => $t['facturado'] !== '0.00'
+                || $t['gastos_ordinarios'] !== '0.00'
+                || $t['gastos_extraordinarios'] !== '0.00')
             ->sortByDesc(fn (array $t) => (float) $t['neto'])
             ->values();
 
@@ -66,6 +68,7 @@ class DashboardController extends Controller
                 ]),
                 'facturado' => Decimal::sumar($totalesPorPropiedad->pluck('facturado')),
                 'cobrado' => Decimal::sumar($totalesPorPropiedad->pluck('cobrado')),
+                'gastos_ordinarios' => Decimal::sumar($totalesPorPropiedad->pluck('gastos_ordinarios')),
                 'gastos_extraordinarios' => Decimal::sumar($totalesPorPropiedad->pluck('gastos_extraordinarios')),
                 'neto' => Decimal::sumar($totalesPorPropiedad->pluck('neto')),
             ],
