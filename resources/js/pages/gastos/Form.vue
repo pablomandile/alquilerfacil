@@ -92,6 +92,41 @@ const form = useForm<{
     comprobante: null,
 });
 
+/* Período: se elige mes y año por separado (el mes en letras), pero viaja como
+   fecha con día 1, que es como lo guarda el backend. */
+const meses = Array.from({ length: 12 }, (_, i) => {
+    const nombre = new Date(2020, i, 1).toLocaleDateString('es-AR', {
+        month: 'long',
+    });
+    return {
+        value: i + 1,
+        label: nombre.charAt(0).toUpperCase() + nombre.slice(1),
+    };
+});
+
+const anioActual = new Date().getFullYear();
+const anios = computed(() => {
+    const lista: number[] = [];
+    for (let a = anioActual + 1; a >= anioActual - 5; a--) lista.push(a);
+
+    // Si se está editando un gasto de un año fuera del rango, se incluye igual.
+    const anioForm = Number(form.periodo.slice(0, 4));
+    if (anioForm && !lista.includes(anioForm)) {
+        lista.push(anioForm);
+        lista.sort((x, y) => y - x);
+    }
+    return lista;
+});
+
+const periodoMes = ref(
+    Number(form.periodo.slice(5, 7)) || new Date().getMonth() + 1,
+);
+const periodoAnio = ref(Number(form.periodo.slice(0, 4)) || anioActual);
+
+watch([periodoMes, periodoAnio], ([mes, anio]) => {
+    form.periodo = `${anio}-${String(mes).padStart(2, '0')}-01`;
+});
+
 function elegirArchivo(campo: 'factura' | 'comprobante', evento: Event) {
     form[campo] = (evento.target as HTMLInputElement).files?.[0] ?? null;
 }
@@ -237,16 +272,35 @@ function enviar() {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="periodo">Período</Label>
-                    <Input
-                        id="periodo"
-                        v-model="form.periodo"
-                        type="date"
-                        required
-                    />
+                    <Label for="periodo-mes">Período</Label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select
+                            id="periodo-mes"
+                            v-model.number="periodoMes"
+                            class="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                        >
+                            <option
+                                v-for="m in meses"
+                                :key="m.value"
+                                :value="m.value"
+                            >
+                                {{ m.label }}
+                            </option>
+                        </select>
+                        <select
+                            v-model.number="periodoAnio"
+                            aria-label="Año del período"
+                            class="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                        >
+                            <option v-for="a in anios" :key="a" :value="a">
+                                {{ a }}
+                            </option>
+                        </select>
+                    </div>
                     <p class="text-muted-foreground text-xs">
                         El mes al que corresponde el gasto.
                     </p>
+                    <InputError :message="form.errors.periodo" />
                 </div>
 
                 <div class="grid gap-2">
