@@ -16,6 +16,7 @@ import { dashboard } from '@/routes';
 import rutasAjustes from '@/routes/ajustes';
 import rutasCobranzas from '@/routes/cobranzas';
 import rutasGastos from '@/routes/gastos';
+import rutasPropiedades from '@/routes/propiedades';
 
 defineOptions({
     layout: {
@@ -37,6 +38,18 @@ defineProps<{
         contratos_activos: number;
         ajustes_propuestos: number;
         gastos_impagos: number;
+    };
+    alquileres: {
+        por_propiedad: Array<{
+            id: number;
+            alias: string;
+            cobrado: string;
+            neto: string;
+        }>;
+        facturado: string;
+        cobrado: string;
+        gastos_extraordinarios: string;
+        neto: string;
     };
     ajustesPendientes: Array<{
         id: number;
@@ -192,6 +205,96 @@ defineProps<{
                 </p>
             </section>
         </div>
+
+        <!-- Acumulado del alquiler por propiedad -->
+        <section class="tarjeta tinte-indigo rounded-xl border">
+            <header
+                class="flex items-center justify-between border-b px-4 py-3"
+            >
+                <h2 class="text-sm font-medium">Alquileres por propiedad</h2>
+                <Button as-child size="sm" variant="ghost">
+                    <Link :href="rutasPropiedades.index()">
+                        Ver propiedades
+                    </Link>
+                </Button>
+            </header>
+
+            <template v-if="alquileres.por_propiedad.length">
+                <ul class="divide-y text-sm">
+                    <li
+                        v-for="p in alquileres.por_propiedad"
+                        :key="p.id"
+                        class="flex items-center justify-between gap-3 px-4 py-3"
+                    >
+                        <div class="min-w-0">
+                            <p class="truncate font-medium">{{ p.alias }}</p>
+                            <p
+                                class="text-muted-foreground text-xs tabular-nums"
+                            >
+                                Cobrado {{ pesos(p.cobrado) }}
+                            </p>
+                        </div>
+                        <span
+                            class="shrink-0 font-semibold tabular-nums"
+                            :class="
+                                Number(p.neto) < 0
+                                    ? 'text-rose-600 dark:text-rose-400'
+                                    : ''
+                            "
+                        >
+                            {{ pesos(p.neto) }}
+                        </span>
+                    </li>
+                </ul>
+
+                <dl class="space-y-1.5 border-t px-4 py-3 text-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-muted-foreground">Facturado</dt>
+                        <dd class="tabular-nums">
+                            {{ pesos(alquileres.facturado) }}
+                        </dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <dt class="text-muted-foreground">Cobrado</dt>
+                        <dd class="tabular-nums">
+                            {{ pesos(alquileres.cobrado) }}
+                        </dd>
+                    </div>
+                    <div
+                        v-if="Number(alquileres.gastos_extraordinarios) > 0"
+                        class="flex items-center justify-between gap-3"
+                    >
+                        <dt class="text-muted-foreground">
+                            Gastos extraordinarios
+                        </dt>
+                        <dd
+                            class="text-rose-600 tabular-nums dark:text-rose-400"
+                        >
+                            −{{ pesos(alquileres.gastos_extraordinarios) }}
+                        </dd>
+                    </div>
+                    <div
+                        class="flex items-center justify-between gap-3 border-t pt-1.5 font-semibold"
+                    >
+                        <dt>Neto</dt>
+                        <dd
+                            class="tabular-nums"
+                            :class="
+                                Number(alquileres.neto) < 0
+                                    ? 'text-rose-600 dark:text-rose-400'
+                                    : ''
+                            "
+                        >
+                            {{ pesos(alquileres.neto) }}
+                        </dd>
+                    </div>
+                </dl>
+            </template>
+
+            <p v-else class="text-muted-foreground px-4 py-6 text-sm">
+                Todavía no hay alquileres facturados.
+            </p>
+        </section>
 
         <!-- Índices y totales -->
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

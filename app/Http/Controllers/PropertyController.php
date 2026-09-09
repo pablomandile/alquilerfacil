@@ -6,7 +6,6 @@ use App\Enums\ACargoDe;
 use App\Enums\CategoriaTemaAdmin;
 use App\Enums\EstadoPropiedad;
 use App\Enums\TipoDocumentoPropiedad;
-use App\Enums\TipoGasto;
 use App\Enums\TipoPropiedad;
 use App\Http\Requests\PropertyRequest;
 use App\Models\AdminThread;
@@ -104,22 +103,8 @@ class PropertyController extends Controller
                 ];
             });
 
-        $facturadoTotal = bcadd($totalesPorContrato->reduce(
-            fn (string $acc, array $c) => bcadd($acc, $c['facturado'], 2),
-            '0'
-        ), '0', 2);
-        $cobradoTotal = bcadd($totalesPorContrato->reduce(
-            fn (string $acc, array $c) => bcadd($acc, $c['cobrado'], 2),
-            '0'
-        ), '0', 2);
-
-        // De los extraordinarios que absorben los dueños: el gasto entero si va
-        // a su cargo, la mitad si es compartido con el inquilino.
-        $gastosExtraordinarios = bcadd((string) $property->expenses()
-            ->where('tipo', TipoGasto::Extraordinario)
-            ->conReparto()
-            ->get(['id', 'monto', 'a_cargo_de'])
-            ->reduce(fn (string $acc, Expense $g) => bcadd($acc, $g->montoARepartir(), 2), '0'), '0', 2);
+        // Facturado, cobrado y neto contra los extraordinarios de los dueños.
+        $totales = $property->totalesDeAlquiler();
 
         // Cuadro del mes para pasarle al inquilino: el alquiler más los gastos a
         // su cargo que vencen en el mes en curso. Sólo si hay contrato vigente.
@@ -204,10 +189,7 @@ class PropertyController extends Controller
                 ]),
                 'totales' => [
                     'por_contrato' => $totalesPorContrato,
-                    'facturado' => $facturadoTotal,
-                    'cobrado' => $cobradoTotal,
-                    'gastos_extraordinarios' => $gastosExtraordinarios,
-                    'neto' => bcsub($cobradoTotal, $gastosExtraordinarios, 2),
+                    ...$totales,
                 ],
             ],
             'tiposDocumento' => Opciones::de(TipoDocumentoPropiedad::class),

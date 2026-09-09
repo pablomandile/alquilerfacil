@@ -10,6 +10,7 @@ use App\Models\IndexValue;
 use App\Models\Property;
 use App\Models\RentAdjustment;
 use App\Models\RentCharge;
+use App\Support\Decimal;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,6 +35,19 @@ class DashboardController extends Controller
             $cobrado = bcadd($cobrado, $cargo->totalPagado(), 2);
         }
 
+        // Acumulado del alquiler por propiedad: lo cobrado y el neto contra los
+        // gastos extraordinarios, como en la ficha de cada propiedad. Sólo las
+        // que ya tienen movimiento.
+        $totalesPorPropiedad = Property::query()
+            ->visiblePara($usuario)
+            ->with('contracts.charges.payments')
+            ->orderBy('alias')
+            ->get()
+            ->map(fn (Property $p) => [...$p->totalesDeAlquiler(), 'id' => $p->id, 'alias' => $p->alias])
+            ->filter(fn (array $t) => $t['facturado'] !== '0.00' || $t['gastos_extraordinarios'] !== '0.00')
+            ->sortByDesc(fn (array $t) => (float) $t['neto'])
+            ->values();
+
         return Inertia::render('Dashboard', [
             'mes' => $mes->translatedFormat('F \d\e Y'),
             'cobranza' => [
@@ -42,6 +56,18 @@ class DashboardController extends Controller
                 'pendiente' => bcsub($facturado, $cobrado, 2),
                 'cargos' => $cargos->count(),
                 'vencidos' => $cargos->where('estado', EstadoCargo::Vencido)->count(),
+            ],
+            'alquileres' => [
+                'por_propiedad' => $totalesPorPropiedad->map(fn (array $t) => [
+                    'id' => $t['id'],
+                    'alias' => $t['alias'],
+                    'cobrado' => $t['cobrado'],
+                    'neto' => $t['neto'],
+                ]),
+                'facturado' => Decimal::sumar($totalesPorPropiedad->pluck('facturado')),
+                'cobrado' => Decimal::sumar($totalesPorPropiedad->pluck('cobrado')),
+                'gastos_extraordinarios' => Decimal::sumar($totalesPorPropiedad->pluck('gastos_extraordinarios')),
+                'neto' => Decimal::sumar($totalesPorPropiedad->pluck('neto')),
             ],
             'resumen' => [
                 'propiedades' => Property::query()->visiblePara($usuario)->count(),

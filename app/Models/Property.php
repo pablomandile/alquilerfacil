@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EstadoContrato;
 use App\Enums\EstadoPropiedad;
+use App\Enums\TipoGasto;
 use App\Enums\TipoPropiedad;
 use Carbon\CarbonInterface;
 use Database\Factories\PropertyFactory;
@@ -156,5 +157,46 @@ class Property extends Model
     public function porcentajeTotal(): float
     {
         return (float) $this->owners->sum('pivot.porcentaje');
+    }
+
+    /**
+     * Totalización histórica del alquiler: lo facturado y lo cobrado en todos
+     * los contratos de la propiedad, y el neto contra los gastos
+     * extraordinarios que absorben los propietarios (el gasto entero si va a su
+     * cargo, la mitad si es compartido con el inquilino).
+     *
+     * Aprovecha `contracts.charges.payments` si están cargadas; los
+     * extraordinarios los consulta aparte para no depender de un `expenses`
+     * acotado.
+     *
+     * @return array{facturado: numeric-string, cobrado: numeric-string, gastos_extraordinarios: numeric-string, neto: numeric-string}
+     */
+    public function totalesDeAlquiler(): array
+    {
+        $facturado = '0';
+        $cobrado = '0';
+
+        foreach ($this->contracts as $contrato) {
+            foreach ($contrato->charges as $cargo) {
+                $facturado = bcadd($facturado, $cargo->monto, 2);
+
+                foreach ($cargo->payments as $pago) {
+                    $cobrado = bcadd($cobrado, $pago->monto, 2);
+                }
+            }
+        }
+
+        $gastosExtraordinarios = $this->expenses()
+            ->where('tipo', TipoGasto::Extraordinario)
+            ->conReparto()
+            ->get(['id', 'monto', 'a_cargo_de'])
+            ->reduce(fn (string $acc, Expense $g) => bcadd($acc, $g->montoARepartir(), 2), '0');
+
+        return [
+            'facturado' => bcadd($facturado, '0', 2),
+            'cobrado' => bcadd($cobrado, '0', 2),
+            'gastos_extraordinarios' => bcadd($gastosExtraordinarios, '0', 2),
+            'neto' => bcsub($cobrado, $gastosExtraordinarios, 2),
+        ];
     }
 }
