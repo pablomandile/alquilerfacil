@@ -11,6 +11,7 @@ use App\Models\Property;
 use App\Models\Tenant;
 use App\Services\Ajustes\CalculadorDeAjuste;
 use App\Services\Ajustes\PropuestaDeAjuste;
+use App\Support\Decimal;
 use App\Support\Opciones;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -205,7 +206,7 @@ class ContractController extends Controller
     /** @return array<string, mixed> */
     private function validado(Request $request, bool $editando = false): array
     {
-        return $request->validate([
+        $datos = $request->validate([
             'property_id' => ['required', 'integer', 'exists:properties,id'],
             'tenant_id' => ['required', 'integer', 'exists:tenants,id'],
             'fecha_inicio' => ['required', 'date'],
@@ -221,6 +222,15 @@ class ContractController extends Controller
             'estado' => ['required', Rule::enum(EstadoContrato::class)],
             'notas' => ['nullable', 'string', 'max:5000'],
         ]);
+
+        // El alquiler se lleva siempre en pesos enteros, sin centavos.
+        foreach (['monto_base', 'monto_actual'] as $campo) {
+            if (isset($datos[$campo])) {
+                $datos[$campo] = Decimal::aPesosEnteros(Decimal::desde($datos[$campo]));
+            }
+        }
+
+        return $datos;
     }
 
     /** @return array<string, mixed> */
@@ -238,7 +248,7 @@ class ContractController extends Controller
             'indices' => Opciones::de(Indice::class),
             'estados' => Opciones::de(EstadoContrato::class),
             'opcionesRedondeo' => [
-                ['value' => 0, 'label' => 'Sin redondear'],
+                ['value' => 0, 'label' => 'Sólo a pesos enteros'],
                 ['value' => 100, 'label' => 'Al centenar más cercano'],
                 ['value' => 1000, 'label' => 'Al millar más cercano'],
             ],

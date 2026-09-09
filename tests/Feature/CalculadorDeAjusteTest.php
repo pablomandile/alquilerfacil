@@ -113,13 +113,16 @@ class CalculadorDeAjusteTest extends TestCase
         $this->assertSame('425000.00', $propuesta->montoNuevo);
     }
 
-    public function test_sin_redondeo_configurado_deja_los_centavos(): void
+    public function test_sin_redondeo_configurado_igual_deja_pesos_enteros(): void
     {
-        $this->cargarIpc(['2026-04-01' => 100, '2026-07-01' => 106.37]);
+        // Los centavos no se usan nunca en el importe del alquiler, aunque el
+        // contrato no tenga configurado redondeo al centenar ni al millar.
+        $this->cargarIpc(['2026-04-01' => 3, '2026-07-01' => 3.19]);
 
         $propuesta = $this->calculador->calcular($this->contratoIpc('2026-08-01', 400000));
 
-        $this->assertSame('425480.00', $propuesta->montoNuevo);
+        // 400.000 x (3,19 / 3) = 425.333,33 -> 425.333.
+        $this->assertSame('425333.00', $propuesta->montoNuevo);
     }
 
     /**
@@ -163,7 +166,8 @@ class CalculadorDeAjusteTest extends TestCase
         $propuesta = $this->calculador->calcular($this->contratoIpc('2026-08-01', 450000));
 
         $this->assertEqualsWithDelta(6.28, (float) $propuesta->variacionPorcentual, 0.01);
-        $this->assertSame('478248.16', $propuesta->montoNuevo);
+        // 450.000 x 1,062773... = 478.248,16 -> en pesos enteros, 478.248.
+        $this->assertSame('478248.00', $propuesta->montoNuevo);
     }
 
     public function test_reconoce_una_baja_si_hubo_deflacion(): void

@@ -22,8 +22,10 @@ por índice oficial, gastos, cobranzas y reparto entre varios dueños.
   solos de las APIs oficiales.
 - La app **calcula y propone**; aplicar el aumento es siempre decisión del
   usuario, que puede editar el monto antes de confirmar.
+- El alquiler queda **siempre en pesos enteros**; opcionalmente, redondeado al
+  centenar o al millar más cercano según el contrato.
 - Rechazar una propuesta con motivo; corregir el importe del último ajuste ya
-  aplicado (para el redondeo que quedó pendiente).
+  aplicado (para dejarlo en un número más redondo).
 - Contempla el desfasaje de publicación del INDEC (ver más abajo).
 
 **Cobranzas**

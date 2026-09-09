@@ -32,7 +32,8 @@ return new class extends Migration
             $table->unsignedTinyInteger('frecuencia_meses')->default(3);
             $table->date('proximo_ajuste')->nullable();
 
-            // Redondear el monto propuesto al múltiplo más cercano (0 = sin redondeo).
+            // El alquiler siempre queda en pesos enteros; este múltiplo redondea
+            // además el monto propuesto al centenar/millar más cercano (0 = no).
             $table->unsignedSmallInteger('redondeo')->default(0);
 
             $table->string('estado')->default(EstadoContrato::Activo->value);

@@ -47,7 +47,10 @@ class Decimal
      */
     public static function redondear(string $numero, int $decimales = 2): string
     {
-        $mitad = bcdiv('1', bcpow('10', (string) ($decimales + 1), 0), $decimales + 1);
+        // Media unidad de la última posición: 0,005 para dos decimales, 0,5 para
+        // ninguno. Sumarla (o restarla, si el número es negativo) antes de truncar
+        // en la escala pedida deja el resultado redondeado media unidad hacia afuera.
+        $mitad = bcdiv('5', bcpow('10', (string) ($decimales + 1), 0), $decimales + 1);
 
         $ajustado = bccomp($numero, '0', $decimales + 2) < 0
             ? bcsub($numero, $mitad, $decimales + 1)
@@ -57,8 +60,23 @@ class Decimal
     }
 
     /**
+     * Deja un importe en pesos enteros (sin centavos), con la escala habitual de
+     * los montos. El alquiler se lleva siempre así.
+     *
+     * @param  numeric-string  $numero
+     * @return numeric-string
+     */
+    public static function aPesosEnteros(string $numero): string
+    {
+        return bcadd(self::redondear($numero, 0), '0', 2);
+    }
+
+    /**
      * Redondea al múltiplo más cercano. Se usa para dejar el alquiler en un
      * número "lindo" ($478.000 en vez de $477.913,44), que es lo que se pacta.
+     *
+     * Sin múltiplo (o con 0/1) el alquiler igual queda en pesos enteros: los
+     * centavos no se usan nunca en el importe.
      *
      * @param  numeric-string  $numero
      * @return numeric-string
@@ -66,7 +84,7 @@ class Decimal
     public static function aMultiploDe(string $numero, int $multiplo): string
     {
         if ($multiplo <= 1) {
-            return self::redondear($numero);
+            return self::aPesosEnteros($numero);
         }
 
         $veces = self::redondear(bcdiv($numero, (string) $multiplo, 8), 0);

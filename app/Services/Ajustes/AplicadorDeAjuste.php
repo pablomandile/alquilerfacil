@@ -56,7 +56,7 @@ class AplicadorDeAjuste
             if ($montoEditado !== null) {
                 // Se pisa el monto pero se dejan intactos los valores del índice:
                 // sirven para ver después cuánto daba la cuenta y cuánto se pactó.
-                $ajuste->monto_nuevo = Decimal::redondear($montoEditado);
+                $ajuste->monto_nuevo = Decimal::aPesosEnteros($montoEditado);
                 $ajuste->notas = trim(($ajuste->notas ?? '')."\nMonto ajustado a mano al aplicar.");
             }
 
@@ -77,9 +77,9 @@ class AplicadorDeAjuste
 
     /**
      * Corrige el importe de un ajuste ya aplicado y lo replica en el alquiler
-     * vigente del contrato. Es para el redondeo que quedó pendiente al
-     * confirmar, así que no toca los valores del índice, la variación ni la
-     * fecha del próximo ajuste: sólo el número que se cobra.
+     * vigente del contrato. Es para dejarlo en un número más redondo, así que no
+     * toca los valores del índice, la variación ni la fecha del próximo ajuste:
+     * sólo el número que se cobra.
      *
      * Los cargos ya emitidos no cambian (su monto quedó congelado al emitirlos);
      * el valor corregido lo toma el próximo cargo que se genere.
@@ -89,7 +89,7 @@ class AplicadorDeAjuste
     public function corregirImporte(RentAdjustment $ajuste, string $monto): RentAdjustment
     {
         return DB::transaction(function () use ($ajuste, $monto) {
-            $ajuste->monto_nuevo = Decimal::redondear($monto);
+            $ajuste->monto_nuevo = Decimal::aPesosEnteros($monto);
             $ajuste->notas = trim(($ajuste->notas ?? '')
                 ."\nImporte corregido a mano el ".now()->format('d/m/Y').'.');
             $ajuste->save();

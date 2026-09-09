@@ -38,7 +38,7 @@ class RentAdjustmentController extends Controller
             ->get();
 
         // El último ajuste aplicado de cada contrato admite corregir el importe
-        // (típicamente, para redondear los centavos que dejó la cuenta).
+        // (típicamente, para dejarlo en un número más redondo que el que dio la cuenta).
         $corregibles = $registros
             ->where('estado', EstadoAjuste::Aplicado)
             ->sortBy([['vigencia_desde', 'desc'], ['id', 'desc']])
@@ -106,8 +106,8 @@ class RentAdjustmentController extends Controller
     }
 
     /**
-     * Corrige el importe de un ajuste ya aplicado. Pensado para el redondeo que
-     * quedó pendiente al confirmar; sólo el último ajuste aplicado del contrato.
+     * Corrige el importe de un ajuste ya aplicado. Pensado para dejarlo en un
+     * número más redondo; sólo el último ajuste aplicado del contrato.
      */
     public function actualizar(Request $request, RentAdjustment $adjustment, AplicadorDeAjuste $aplicador): RedirectResponse
     {

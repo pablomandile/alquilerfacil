@@ -45,12 +45,13 @@ class CalculadorDeAjuste
         // período y no arrastra el redondeo de cada mes.
         $coeficiente = bcdiv((string) $valorHasta->valor, (string) $valorDesde->valor, 10);
 
+        // El alquiler siempre queda en pesos enteros; con `redondeo` configurado,
+        // además al centenar o al millar más cercano.
         $montoAnterior = (string) $contract->monto_actual;
-        $montoNuevo = Decimal::redondear(bcmul($montoAnterior, $coeficiente, 10));
-
-        if ($contract->redondeo > 1) {
-            $montoNuevo = Decimal::aMultiploDe($montoNuevo, $contract->redondeo);
-        }
+        $montoNuevo = Decimal::aMultiploDe(
+            bcmul($montoAnterior, $coeficiente, 10),
+            $contract->redondeo,
+        );
 
         return new PropuestaDeAjuste(
             contract: $contract,
