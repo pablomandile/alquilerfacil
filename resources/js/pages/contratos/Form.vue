@@ -83,12 +83,12 @@ function enviar() {
 <template>
     <Head :title="editando ? 'Editar contrato' : 'Nuevo contrato'" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-indigo flex flex-1 flex-col gap-6 p-4">
         <PageHeader :titulo="editando ? 'Editar contrato' : 'Nuevo contrato'" />
 
         <form class="grid max-w-3xl gap-6" @submit.prevent="enviar">
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2">
                     <Label for="property_id">Propiedad</Label>
@@ -156,7 +156,7 @@ function enviar() {
 
             <!-- Plata -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <h2 class="text-sm font-medium sm:col-span-2">Valores</h2>
 
@@ -166,7 +166,7 @@ function enviar() {
                         id="monto_base"
                         v-model="form.monto_base"
                         type="number"
-                        step="0.01"
+                        step="1"
                         min="0"
                         class="tabular-nums"
                         required
@@ -180,7 +180,7 @@ function enviar() {
                         id="monto_actual"
                         v-model="form.monto_actual"
                         type="number"
-                        step="0.01"
+                        step="1"
                         min="0"
                         class="tabular-nums"
                     />
@@ -218,7 +218,7 @@ function enviar() {
 
             <!-- Actualización -->
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="sm:col-span-2">
                     <h2 class="text-sm font-medium">Actualización</h2>
@@ -285,7 +285,8 @@ function enviar() {
                         </option>
                     </select>
                     <p class="text-muted-foreground text-xs">
-                        Para que el alquiler quede en un número redondo.
+                        El alquiler siempre queda en pesos enteros; acá elegís
+                        si además se redondea a un número más parejo.
                     </p>
                 </div>
             </section>

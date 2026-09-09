@@ -148,7 +148,7 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
 <template>
     <Head :title="`${contrato.propiedad} — ${contrato.inquilino.nombre}`" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-indigo flex flex-1 flex-col gap-6 p-4">
         <PageHeader
             :titulo="contrato.propiedad"
             :descripcion="`${contrato.inquilino.nombre} · ${contrato.desde} a ${contrato.hasta}`"
@@ -179,9 +179,7 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
 
         <div class="grid gap-4 lg:grid-cols-3">
             <!-- Condiciones -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
-            >
+            <section class="tarjeta rounded-xl border p-4">
                 <h2 class="text-sm font-medium">Condiciones</h2>
                 <dl class="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div>
@@ -223,9 +221,7 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
             </section>
 
             <!-- Inquilino -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
-            >
+            <section class="tarjeta rounded-xl border p-4">
                 <h2 class="text-sm font-medium">Inquilino</h2>
                 <dl class="mt-3 space-y-2 text-sm">
                     <div>
@@ -253,9 +249,7 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
             </section>
 
             <!-- Próximo ajuste: se calcula al vuelo -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
-            >
+            <section class="tarjeta rounded-xl border p-4">
                 <h2 class="text-sm font-medium">Próximo ajuste</h2>
 
                 <template v-if="proyeccion?.disponible">
@@ -305,9 +299,7 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
         <!-- Historial de ajustes -->
         <section v-if="contrato.ajustes.length" class="space-y-3">
             <h2 class="text-sm font-medium">Historial de ajustes</h2>
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
-            >
+            <div class="tarjeta overflow-x-auto rounded-xl border">
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">
                         <tr>
@@ -361,9 +353,7 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
         <!-- Cargos -->
         <section v-if="contrato.cargos.length" class="space-y-3">
             <h2 class="text-sm font-medium">Cargos emitidos</h2>
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
-            >
+            <div class="tarjeta overflow-x-auto rounded-xl border">
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">
                         <tr>
@@ -419,9 +409,7 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
         <!-- Documentos: el contrato firmado, la garantía, el pagaré, etc. -->
         <section class="space-y-3">
             <h2 class="text-sm font-medium">Documentos</h2>
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta divide-y overflow-hidden rounded-xl border"
-            >
+            <div class="tarjeta divide-y overflow-hidden rounded-xl border">
                 <p
                     v-if="!contrato.documentos.length"
                     class="text-muted-foreground px-4 py-3 text-sm"

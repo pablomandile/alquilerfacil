@@ -60,7 +60,7 @@ function cambiarPeriodo() {
 <template>
     <Head title="Liquidaciones" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-esmeralda flex flex-1 flex-col gap-6 p-4">
         <PageHeader
             titulo="Liquidaciones"
             :descripcion="`Lo que le corresponde a cada dueño en ${periodoLabel}`"
@@ -85,7 +85,7 @@ function cambiarPeriodo() {
         <article
             v-for="p in propietarios"
             :key="p.id"
-            class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border"
+            class="tarjeta rounded-xl border"
         >
             <header
                 class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"

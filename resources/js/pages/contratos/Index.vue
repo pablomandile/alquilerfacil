@@ -40,7 +40,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 <template>
     <Head title="Contratos" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-indigo flex flex-1 flex-col gap-6 p-4">
         <PageHeader titulo="Contratos">
             <template #acciones>
                 <Button v-if="puedeGestionar" as-child size="sm">
@@ -70,7 +70,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
                     v-for="c in contratos"
                     :key="c.id"
                     :href="rutasContratos.show(c.id)"
-                    class="border-sidebar-border/70 dark:border-sidebar-border tarjeta hover:border-ring rounded-xl border p-4"
+                    class="tarjeta hover:border-ring rounded-xl border p-4"
                 >
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
@@ -111,7 +111,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
             </div>
 
             <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta hidden overflow-x-auto rounded-xl border md:block"
+                class="tarjeta hidden overflow-x-auto rounded-xl border md:block"
             >
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">

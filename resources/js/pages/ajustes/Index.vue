@@ -84,8 +84,8 @@ function confirmarAplicar() {
         });
 }
 
-/* Corregir el importe de un ajuste ya aplicado: el caso típico es haberlo
-   confirmado sin redondear. Sólo se ofrece en el último aplicado del contrato. */
+/* Corregir el importe de un ajuste ya aplicado: el caso típico es dejarlo en un
+   número más redondo. Sólo se ofrece en el último aplicado del contrato. */
 const hayEditables = computed(() => props.historial.some((a) => a.editable));
 const corrigiendo = ref<Ajuste | null>(null);
 const formCorregir = useForm({ monto: '' });
@@ -141,7 +141,7 @@ function recalcular() {
 <template>
     <Head title="Ajustes" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-violeta flex flex-1 flex-col gap-6 p-4">
         <PageHeader
             titulo="Ajustes de alquiler"
             descripcion="La app calcula el aumento que corresponde por índice. Aplicarlo lo decidís vos."
@@ -207,7 +207,7 @@ function recalcular() {
                 <article
                     v-for="ajuste in propuestos"
                     :key="ajuste.id"
-                    class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
+                    class="tarjeta rounded-xl border p-4"
                 >
                     <div
                         class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
@@ -267,9 +267,7 @@ function recalcular() {
         <section v-if="historial.length" class="space-y-3">
             <h2 class="text-sm font-medium">Historial</h2>
 
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
-            >
+            <div class="tarjeta overflow-x-auto rounded-xl border">
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">
                         <tr>
@@ -372,7 +370,7 @@ function recalcular() {
                         id="monto"
                         v-model="formAplicar.monto"
                         type="number"
-                        step="0.01"
+                        step="1"
                         class="tabular-nums"
                     />
                     <p class="text-muted-foreground text-xs">
@@ -458,7 +456,7 @@ function recalcular() {
                     id="monto-correccion"
                     v-model="formCorregir.monto"
                     type="number"
-                    step="0.01"
+                    step="1"
                     class="tabular-nums"
                 />
                 <InputError :message="formCorregir.errors.monto" />

@@ -104,9 +104,7 @@ function crearTema() {
             </Button>
         </div>
 
-        <div
-            class="border-sidebar-border/70 dark:border-sidebar-border tarjeta divide-y overflow-hidden rounded-xl border"
-        >
+        <div class="tarjeta divide-y overflow-hidden rounded-xl border">
             <p
                 v-if="!temas.length"
                 class="text-muted-foreground px-4 py-3 text-sm"

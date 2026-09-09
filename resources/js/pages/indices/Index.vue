@@ -45,7 +45,7 @@ function sincronizar(fuente?: string) {
 <template>
     <Head title="Índices" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-turquesa flex flex-1 flex-col gap-6 p-4">
         <PageHeader
             titulo="Índices"
             descripcion="Los valores oficiales con los que se calculan los ajustes. Se bajan solos todos los días."
@@ -70,7 +70,7 @@ function sincronizar(fuente?: string) {
         <section
             v-for="serie in series"
             :key="serie.fuente"
-            class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border"
+            class="tarjeta rounded-xl border"
         >
             <header
                 class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"

@@ -5,11 +5,12 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import StatCard from '@/components/StatCard.vue';
 import VisorArchivo, {
     type ArchivoVisible,
 } from '@/components/VisorArchivo.vue';
 import { Button } from '@/components/ui/button';
-import { pesos } from '@/lib/formato';
+import { pesos, pesosRedondos } from '@/lib/formato';
 import rutasGastos from '@/routes/gastos';
 import rutasGastosDocumentos from '@/routes/gastos/documentos';
 
@@ -78,6 +79,14 @@ const total = computed(() =>
     props.gastos.reduce((suma, g) => suma + Number(g.monto), 0),
 );
 
+const impagos = computed(() => props.gastos.filter((g) => !g.pagado));
+
+const impagoTotal = computed(() =>
+    impagos.value.reduce((suma, g) => suma + Number(g.monto), 0),
+);
+
+const vencidos = computed(() => props.gastos.filter((g) => g.vencido).length);
+
 const visor = ref<ArchivoVisible | null>(null);
 
 function verDocumento(d: Documento) {
@@ -95,7 +104,7 @@ function verDocumento(d: Documento) {
 <template>
     <Head title="Gastos" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-rosa flex flex-1 flex-col gap-6 p-4">
         <PageHeader
             titulo="Gastos"
             :descripcion="`${gastos.length} gastos · ${pesos(total)} en total`"
@@ -109,6 +118,32 @@ function verDocumento(d: Documento) {
                 </Button>
             </template>
         </PageHeader>
+
+        <div v-if="gastos.length" class="grid gap-4 sm:grid-cols-3">
+            <StatCard
+                etiqueta="Total"
+                :valor="pesosRedondos(total)"
+                :detalle="`${gastos.length} gastos`"
+                tinte="rosa"
+            />
+            <StatCard
+                etiqueta="Impago"
+                :valor="pesosRedondos(impagoTotal)"
+                :detalle="
+                    impagos.length
+                        ? `${impagos.length} sin pagar`
+                        : 'todo al día'
+                "
+                :acento="impagos.length ? 'atencion' : 'normal'"
+                tinte="ambar"
+            />
+            <StatCard
+                etiqueta="Vencidos"
+                :valor="vencidos"
+                :acento="vencidos > 0 ? 'alerta' : 'normal'"
+                tinte="rosa"
+            />
+        </div>
 
         <!-- Filtros -->
         <div class="flex flex-wrap gap-2">
@@ -160,7 +195,7 @@ function verDocumento(d: Documento) {
             <article
                 v-for="g in gastos"
                 :key="g.id"
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
+                class="tarjeta rounded-xl border p-4"
             >
                 <div
                     class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"

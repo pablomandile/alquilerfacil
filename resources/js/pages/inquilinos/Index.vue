@@ -32,7 +32,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
 <template>
     <Head title="Inquilinos" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-ambar flex flex-1 flex-col gap-6 p-4">
         <PageHeader titulo="Inquilinos">
             <template #acciones>
                 <Button v-if="puedeGestionar" as-child size="sm">
@@ -58,7 +58,7 @@ const puedeGestionar = computed(() => page.props.auth?.puedeGestionar ?? false);
             <article
                 v-for="i in inquilinos"
                 :key="i.id"
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
+                class="tarjeta rounded-xl border p-4"
             >
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">

@@ -125,16 +125,14 @@ function enviar() {
 <template>
     <Head :title="editando ? 'Editar propiedad' : 'Nueva propiedad'" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-cielo flex flex-1 flex-col gap-6 p-4">
         <PageHeader
             :titulo="editando ? 'Editar propiedad' : 'Nueva propiedad'"
         />
 
         <form class="grid max-w-3xl gap-6" @submit.prevent="enviar">
             <!-- Identificación -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
-            >
+            <section class="tarjeta grid gap-4 rounded-xl border p-4">
                 <div class="grid gap-2">
                     <Label for="alias">Nombre</Label>
                     <Input
@@ -189,9 +187,7 @@ function enviar() {
             </section>
 
             <!-- Dirección -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
-            >
+            <section class="tarjeta grid gap-4 rounded-xl border p-4">
                 <h2 class="text-sm font-medium">Dirección</h2>
 
                 <div class="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto]">
@@ -270,9 +266,7 @@ function enviar() {
             </section>
 
             <!-- Propietarios y porcentajes -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
-            >
+            <section class="tarjeta grid gap-4 rounded-xl border p-4">
                 <div class="flex items-center justify-between gap-2">
                     <div>
                         <h2 class="text-sm font-medium">Propietarios</h2>

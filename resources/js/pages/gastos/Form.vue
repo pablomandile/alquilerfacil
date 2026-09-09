@@ -148,12 +148,12 @@ function enviar() {
 <template>
     <Head :title="editando ? 'Editar gasto' : 'Nuevo gasto'" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-rosa flex flex-1 flex-col gap-6 p-4">
         <PageHeader :titulo="editando ? 'Editar gasto' : 'Nuevo gasto'" />
 
         <form class="grid max-w-2xl gap-6" @submit.prevent="enviar">
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2 sm:col-span-2">
                     <Label for="property_id">Propiedad</Label>
@@ -220,7 +220,7 @@ function enviar() {
             </section>
 
             <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2">
                     <Label for="monto">Monto</Label>
@@ -310,9 +310,7 @@ function enviar() {
                 </div>
             </section>
 
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
-            >
+            <section class="tarjeta grid gap-4 rounded-xl border p-4">
                 <div class="flex items-center gap-2">
                     <Checkbox id="pagado" v-model="form.pagado" />
                     <Label for="pagado" class="cursor-pointer">
@@ -331,9 +329,7 @@ function enviar() {
             </section>
 
             <!-- Comprobantes: la factura / expensa del período y el pago -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta grid gap-4 rounded-xl border p-4"
-            >
+            <section class="tarjeta grid gap-4 rounded-xl border p-4">
                 <h2 class="text-sm font-medium">Comprobantes</h2>
 
                 <!-- Adjuntos ya cargados (sólo al editar) -->

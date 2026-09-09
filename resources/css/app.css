@@ -232,14 +232,16 @@
 }
 
 /*
- * Superficie de las tarjetas. Sola queda el gris azulado neutro de siempre; con
- * un `tinte-*` al lado, a la parada de arriba se le mezcla ese color.
+ * Superficie de las tarjetas: fondo y borde. Sin tinte queda el gris azulado
+ * neutro de siempre; con un `--tinte` (puesto por un `tinte-*` en la tarjeta o,
+ * más arriba, en el contenedor de la vista) se le mezcla ese color.
  *
  * El `color-mix` con `transparent 0%` devuelve la parada de base tal cual, así
  * que la tarjeta sin tinte no necesita una regla aparte. Por eso `--tinte-fondo`
- * lo setea el `tinte-*` y no el tema: si viviera en `:root` estaría siempre
- * definido y el 0% del fallback nunca entraría (la tarjeta neutra terminaría
- * traslúcida).
+ * y `--tinte-borde` los setea el `tinte-*` y no el tema: si vivieran en `:root`
+ * estarían siempre definidos y el 0% del fallback nunca entraría (la tarjeta
+ * neutra terminaría traslúcida). Como la tarjeta pone su propio `border-color`,
+ * ya no hace falta acompañarla de `border-sidebar-border`.
  */
 @utility tarjeta {
     background-image: linear-gradient(
@@ -252,85 +254,65 @@
             0%,
         var(--card-hasta) 100%
     );
+    border-color: color-mix(
+        in oklab,
+        var(--tinte, transparent) var(--tinte-borde, 0%),
+        var(--sidebar-border)
+    );
 }
 
 /*
- * Un color por tarjeta del panel. Cada uno pinta el fondo, el borde y —vía
- * `icono-tarjeta`— el ícono. Van con el borde adentro, así que la tarjeta que
- * los usa no lleva las clases `border-sidebar-border/70 dark:border-sidebar-border`:
- * dos utilidades peleando por `border-color` dependerían del orden del bundle.
+ * Un color por vista (y, en el panel, por tarjeta). Sólo setea las variables del
+ * tinte; el fondo, el borde y —vía `icono-tarjeta`— el ícono los resuelve cada
+ * `.tarjeta`. Al ser variables que heredan, poner el `tinte-*` en el contenedor
+ * de la página tiñe todas las tarjetas que cuelgan de él; ponerlo en una tarjeta
+ * puntual pisa lo que venga heredado.
+ *
+ * Los nombres van enteros (no `tinte-${x}`) para que los levante el build.
  */
 @utility tinte-indigo {
     --tinte: var(--acento-indigo);
     --tinte-fondo: var(--mezcla-fondo);
-    border-color: color-mix(
-        in oklab,
-        var(--tinte) var(--mezcla-borde),
-        var(--sidebar-border)
-    );
+    --tinte-borde: var(--mezcla-borde);
 }
 
 @utility tinte-esmeralda {
     --tinte: var(--acento-esmeralda);
     --tinte-fondo: var(--mezcla-fondo);
-    border-color: color-mix(
-        in oklab,
-        var(--tinte) var(--mezcla-borde),
-        var(--sidebar-border)
-    );
+    --tinte-borde: var(--mezcla-borde);
 }
 
 @utility tinte-ambar {
     --tinte: var(--acento-ambar);
     --tinte-fondo: var(--mezcla-fondo);
-    border-color: color-mix(
-        in oklab,
-        var(--tinte) var(--mezcla-borde),
-        var(--sidebar-border)
-    );
+    --tinte-borde: var(--mezcla-borde);
 }
 
 @utility tinte-violeta {
     --tinte: var(--acento-violeta);
     --tinte-fondo: var(--mezcla-fondo);
-    border-color: color-mix(
-        in oklab,
-        var(--tinte) var(--mezcla-borde),
-        var(--sidebar-border)
-    );
+    --tinte-borde: var(--mezcla-borde);
 }
 
 @utility tinte-rosa {
     --tinte: var(--acento-rosa);
     --tinte-fondo: var(--mezcla-fondo);
-    border-color: color-mix(
-        in oklab,
-        var(--tinte) var(--mezcla-borde),
-        var(--sidebar-border)
-    );
+    --tinte-borde: var(--mezcla-borde);
 }
 
 @utility tinte-cielo {
     --tinte: var(--acento-cielo);
     --tinte-fondo: var(--mezcla-fondo);
-    border-color: color-mix(
-        in oklab,
-        var(--tinte) var(--mezcla-borde),
-        var(--sidebar-border)
-    );
+    --tinte-borde: var(--mezcla-borde);
 }
 
 @utility tinte-turquesa {
     --tinte: var(--acento-turquesa);
     --tinte-fondo: var(--mezcla-fondo);
-    border-color: color-mix(
-        in oklab,
-        var(--tinte) var(--mezcla-borde),
-        var(--sidebar-border)
-    );
+    --tinte-borde: var(--mezcla-borde);
 }
 
-/* El ícono de la tarjeta toma su color; sin tinte, el gris de siempre. */
+/* El ícono de la tarjeta toma el color del tinte; sin tinte, el gris de siempre. */
 @utility icono-tarjeta {
     color: var(--tinte, var(--muted-foreground));
     opacity: 0.75;

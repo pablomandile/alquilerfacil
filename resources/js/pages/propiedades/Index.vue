@@ -38,7 +38,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 <template>
     <Head title="Propiedades" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-cielo flex flex-1 flex-col gap-6 p-4">
         <PageHeader titulo="Propiedades">
             <template #acciones>
                 <Button v-if="esAdmin" as-child size="sm">
@@ -67,7 +67,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
                 v-for="p in propiedades"
                 :key="p.id"
                 :href="rutasPropiedades.show(p.id)"
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta hover:border-ring rounded-xl border p-4"
+                class="tarjeta hover:border-ring rounded-xl border p-4"
             >
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
@@ -106,7 +106,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 
         <div
             v-if="propiedades.length"
-            class="border-sidebar-border/70 dark:border-sidebar-border tarjeta hidden overflow-x-auto rounded-xl border md:block"
+            class="tarjeta hidden overflow-x-auto rounded-xl border md:block"
         >
             <table class="w-full text-sm">
                 <thead class="text-muted-foreground border-b text-left">

@@ -37,7 +37,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
 <template>
     <Head title="Propietarios" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-esmeralda flex flex-1 flex-col gap-6 p-4">
         <PageHeader titulo="Propietarios">
             <template #acciones>
                 <Button v-if="esAdmin" as-child size="sm">
@@ -66,7 +66,7 @@ const esAdmin = computed(() => page.props.auth?.esAdmin ?? false);
             <article
                 v-for="o in propietarios"
                 :key="o.id"
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
+                class="tarjeta rounded-xl border p-4"
             >
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">

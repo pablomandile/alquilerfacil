@@ -40,12 +40,9 @@ const tintes: Record<Tinte, string> = {
     turquesa: 'tinte-turquesa',
 };
 
-// El `tinte-*` ya trae su propio borde; sin tinte va el neutro de siempre.
-const borde = computed(() =>
-    props.tinte
-        ? tintes[props.tinte]
-        : 'border-sidebar-border/70 dark:border-sidebar-border',
-);
+/* Con `tinte` explícito, ese color; si no, el que herede la vista (o el neutro
+   de `.tarjeta` cuando no hay ninguno). */
+const borde = computed(() => (props.tinte ? tintes[props.tinte] : ''));
 </script>
 
 <template>

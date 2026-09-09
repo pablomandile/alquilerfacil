@@ -119,7 +119,7 @@ function borrarCargo(id: number) {
 <template>
     <Head title="Cobranzas" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-esmeralda flex flex-1 flex-col gap-6 p-4">
         <PageHeader titulo="Cobranzas" :descripcion="periodoLabel">
             <template #acciones>
                 <!-- El input de mes muestra "septiembre de 2026": con w-40 se
@@ -176,7 +176,7 @@ function borrarCargo(id: number) {
             <article
                 v-for="cargo in cargos"
                 :key="cargo.id"
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
+                class="tarjeta rounded-xl border p-4"
             >
                 <div
                     class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"

@@ -17,6 +17,7 @@ import EstadoBadge from '@/components/EstadoBadge.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import SeguimientoAdministracion from '@/components/SeguimientoAdministracion.vue';
+import StatCard from '@/components/StatCard.vue';
 import VisorArchivo, {
     type ArchivoVisible,
 } from '@/components/VisorArchivo.vue';
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { pesos, tamano } from '@/lib/formato';
+import { pesos, pesosRedondos, tamano } from '@/lib/formato';
 import rutasContratos from '@/routes/contratos';
 import rutaMensajeInquilino from '@/routes/mensaje-inquilino';
 import rutasPropiedades from '@/routes/propiedades';
@@ -300,7 +301,7 @@ function alTocarEstado() {
 <template>
     <Head :title="propiedad.alias" />
 
-    <div class="flex flex-1 flex-col gap-6 p-4">
+    <div class="tinte-cielo flex flex-1 flex-col gap-6 p-4">
         <PageHeader
             :titulo="propiedad.alias"
             :descripcion="propiedad.direccion"
@@ -319,11 +320,39 @@ function alTocarEstado() {
             </template>
         </PageHeader>
 
+        <div
+            v-if="propiedad.contratos.length"
+            class="grid gap-4 sm:grid-cols-3"
+        >
+            <StatCard
+                etiqueta="Facturado"
+                :valor="pesosRedondos(propiedad.totales.facturado)"
+                tinte="indigo"
+            />
+            <StatCard
+                etiqueta="Cobrado"
+                :valor="pesosRedondos(propiedad.totales.cobrado)"
+                acento="positivo"
+                tinte="esmeralda"
+            />
+            <StatCard
+                etiqueta="Neto"
+                :valor="pesosRedondos(propiedad.totales.neto)"
+                :acento="
+                    Number(propiedad.totales.neto) < 0 ? 'alerta' : 'normal'
+                "
+                :detalle="
+                    Number(propiedad.totales.gastos_extraordinarios) > 0
+                        ? `${pesos(propiedad.totales.gastos_extraordinarios)} en gastos extraordinarios`
+                        : undefined
+                "
+                tinte="cielo"
+            />
+        </div>
+
         <div class="grid gap-4 lg:grid-cols-3">
             <!-- Ficha -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4"
-            >
+            <section class="tarjeta rounded-xl border p-4">
                 <h2 class="text-sm font-medium">Ficha</h2>
                 <dl class="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div>
@@ -360,9 +389,7 @@ function alTocarEstado() {
             </section>
 
             <!-- Dueños -->
-            <section
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta rounded-xl border p-4 lg:col-span-2"
-            >
+            <section class="tarjeta rounded-xl border p-4 lg:col-span-2">
                 <h2 class="text-sm font-medium">Propietarios</h2>
 
                 <ul
@@ -402,7 +429,7 @@ function alTocarEstado() {
 
             <div
                 v-if="propiedad.contratos.length"
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
+                class="tarjeta overflow-x-auto rounded-xl border"
             >
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">
@@ -462,9 +489,7 @@ function alTocarEstado() {
         <section v-if="propiedad.contratos.length" class="space-y-3">
             <h2 class="text-sm font-medium">Totales del alquiler</h2>
 
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-hidden rounded-xl border"
-            >
+            <div class="tarjeta overflow-hidden rounded-xl border">
                 <ul class="divide-y text-sm">
                     <li
                         v-for="c in propiedad.totales.por_contrato"
@@ -543,9 +568,7 @@ function alTocarEstado() {
                 Alquiler y gastos del mes para el inquilino
             </h2>
 
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-hidden rounded-xl border"
-            >
+            <div class="tarjeta overflow-hidden rounded-xl border">
                 <table class="w-full text-sm">
                     <tbody class="divide-y">
                         <tr v-for="(item, i) in itemsDelMes" :key="i">
@@ -634,9 +657,7 @@ function alTocarEstado() {
         <section v-if="propiedad.gastos.length" class="space-y-3">
             <h2 class="text-sm font-medium">Últimos gastos</h2>
 
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta overflow-x-auto rounded-xl border"
-            >
+            <div class="tarjeta overflow-x-auto rounded-xl border">
                 <table class="w-full text-sm">
                     <thead class="text-muted-foreground border-b text-left">
                         <tr>
@@ -684,9 +705,7 @@ function alTocarEstado() {
         <!-- Documentos: la escritura, el reglamento de copropiedad, planos, etc. -->
         <section class="space-y-3">
             <h2 class="text-sm font-medium">Documentos</h2>
-            <div
-                class="border-sidebar-border/70 dark:border-sidebar-border tarjeta divide-y overflow-hidden rounded-xl border"
-            >
+            <div class="tarjeta divide-y overflow-hidden rounded-xl border">
                 <p
                     v-if="!propiedad.documentos.length"
                     class="text-muted-foreground px-4 py-3 text-sm"
