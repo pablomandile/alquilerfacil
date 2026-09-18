@@ -9,6 +9,7 @@ import {
     Wallet,
 } from '@lucide/vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
+import GraficoLineas from '@/components/GraficoLineas.vue';
 import GraficoTorta from '@/components/GraficoTorta.vue';
 import StatCard from '@/components/StatCard.vue';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,11 @@ defineProps<{
         gastos_extraordinarios: string;
         neto: string;
     };
+    evolucion: Array<{
+        clave: string;
+        alquileres: string | null;
+        gastos: string | null;
+    }>;
     gastos: {
         por_propiedad: Array<{
             id: number;
@@ -141,6 +147,27 @@ defineProps<{
                 tinte="violeta"
             />
         </div>
+
+        <!-- Cómo vienen el alquiler y los gastos mes a mes -->
+        <section
+            class="tarjeta tinte-esmeralda paleta-evolucion rounded-xl border"
+        >
+            <header
+                class="flex items-center justify-between gap-3 border-b px-4 py-3"
+            >
+                <h2 class="text-sm font-medium">Alquileres y gastos por mes</h2>
+                <Button as-child size="sm" variant="ghost">
+                    <Link :href="rutasCobranzas.index()">Ver cobranzas</Link>
+                </Button>
+            </header>
+
+            <div v-if="evolucion.length" class="px-4 py-4">
+                <GraficoLineas :meses="evolucion" />
+            </div>
+            <p v-else class="text-muted-foreground px-4 py-6 text-sm">
+                Todavía no hay meses con movimiento.
+            </p>
+        </section>
 
         <div class="grid gap-4 lg:grid-cols-2">
             <!-- Ajustes que ya están en fecha -->

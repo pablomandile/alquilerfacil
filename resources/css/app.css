@@ -351,6 +351,21 @@
     }
 }
 
+/*
+ * Las dos líneas del gráfico de evolución: alquileres y gastos. Azul y naranja
+ * de la guía de gráficos, el par más separado que hay (ΔE 33 a la vista, 24 con
+ * daltonismo), en claro y en oscuro.
+ */
+@utility paleta-evolucion {
+    --linea-1: #2a78d6;
+    --linea-2: #eb6834;
+
+    :is(.dark *) & {
+        --linea-1: #3987e5;
+        --linea-2: #d95926;
+    }
+}
+
 /* El ícono de la tarjeta toma el color del tinte; sin tinte, el gris de siempre. */
 @utility icono-tarjeta {
     color: var(--tinte, var(--muted-foreground));

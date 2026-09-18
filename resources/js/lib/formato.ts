@@ -40,6 +40,17 @@ export function pesosRedondos(
     return monedaCorta.format(Number(valor));
 }
 
+/** Abreviado, para los ejes de los gráficos: «$ 1,2 M», «$ 900 mil». */
+export function pesosCompactos(valor: number): string {
+    if (valor === 0) return '$ 0';
+    if (Math.abs(valor) >= 1_000_000)
+        return `$ ${unDecimal.format(valor / 1_000_000)} M`;
+    if (Math.abs(valor) >= 1_000)
+        return `$ ${unDecimal.format(valor / 1_000)} mil`;
+
+    return `$ ${unDecimal.format(valor)}`;
+}
+
 export function numero(valor: string | number | null | undefined): string {
     if (valor === null || valor === undefined || valor === '') return '—';
     return decimal.format(Number(valor));

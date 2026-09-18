@@ -11,7 +11,9 @@ use App\Models\IndexValue;
 use App\Models\Property;
 use App\Models\RentAdjustment;
 use App\Models\RentCharge;
+use App\Models\User;
 use App\Support\Decimal;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -136,6 +138,7 @@ class DashboardController extends Controller
                 'gastos_extraordinarios' => Decimal::sumar($totalesPorPropiedad->pluck('gastos_extraordinarios')),
                 'neto' => Decimal::sumar($totalesPorPropiedad->pluck('neto')),
             ],
+            'evolucion' => $this->evolucionMensual($usuario, $mes),
             'gastos' => [
                 'por_propiedad' => $gastosPorPropiedad,
                 'leyenda' => $leyendaDeGastos,
@@ -190,5 +193,71 @@ class DashboardController extends Controller
                 ];
             }),
         ]);
+    }
+
+    /**
+     * Lo facturado en alquileres y lo gastado, mes a mes: los últimos doce meses
+     * hasta el actual, arrancando en el primero que tenga algún movimiento. Un
+     * mes sin registros de una serie queda en null (no en cero): antes del primer
+     * contrato el alquiler no vale cero, todavía no existe.
+     *
+     * @return list<array{clave: string, alquileres: numeric-string|null, gastos: numeric-string|null}>
+     */
+    private function evolucionMensual(User $usuario, CarbonInterface $mes): array
+    {
+        $desde = $mes->copy()->subMonths(11);
+        $hasta = $mes->copy()->endOfMonth();
+
+        $alquileres = $this->sumarPorMes(
+            RentCharge::query()
+                ->visiblePara($usuario)
+                ->whereBetween('periodo', [$desde, $hasta])
+                ->get(['periodo', 'monto'])
+        );
+
+        $gastos = $this->sumarPorMes(
+            Expense::query()
+                ->visiblePara($usuario)
+                ->whereBetween('periodo', [$desde, $hasta])
+                ->get(['periodo', 'monto'])
+        );
+
+        $meses = [];
+
+        for ($n = 11; $n >= 0; $n--) {
+            $clave = $mes->copy()->subMonths($n)->format('Y-m');
+            $alquiler = $alquileres[$clave] ?? null;
+            $gasto = $gastos[$clave] ?? null;
+
+            // Se arranca en el primer mes con movimiento: los vacíos de antes no
+            // dicen nada y sólo achatan el gráfico.
+            if ($meses === [] && $alquiler === null && $gasto === null) {
+                continue;
+            }
+
+            $meses[] = ['clave' => $clave, 'alquileres' => $alquiler, 'gastos' => $gasto];
+        }
+
+        return $meses;
+    }
+
+    /**
+     * Suma los montos por mes ('Y-m'). Se agrupa en PHP y no en SQL para no atar
+     * la consulta a las funciones de fecha de un motor (los tests corren en uno
+     * distinto al de producción).
+     *
+     * @param  Collection<int, RentCharge>|Collection<int, Expense>  $filas
+     * @return array<string, numeric-string>
+     */
+    private function sumarPorMes(Collection $filas): array
+    {
+        $porMes = [];
+
+        foreach ($filas as $fila) {
+            $clave = $fila->periodo->format('Y-m');
+            $porMes[$clave] = bcadd($porMes[$clave] ?? '0', $fila->monto, 2);
+        }
+
+        return $porMes;
     }
 }

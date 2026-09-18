@@ -141,6 +141,61 @@ class DashboardTest extends TestCase
             );
     }
 
+    public function test_arma_la_evolucion_mensual_de_alquileres_y_gastos(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $propiedad = Property::factory()->create();
+        $contrato = Contract::factory()->create(['property_id' => $propiedad->id]);
+
+        // Dos meses con alquiler, uno solo con gastos.
+        RentCharge::factory()->conMonto(100000)->delPeriodo(today()->subMonth())->create(['contract_id' => $contrato->id]);
+        RentCharge::factory()->conMonto(120000)->delPeriodo(today())->create(['contract_id' => $contrato->id]);
+        Expense::factory()->create([
+            'property_id' => $propiedad->id,
+            'periodo' => today()->startOfMonth(),
+            'monto' => 15000,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                // Arranca en el primer mes con movimiento, no doce meses atrás.
+                ->has('evolucion', 2)
+                ->where('evolucion.0.clave', today()->subMonth()->format('Y-m'))
+                ->where('evolucion.0.alquileres', '100000.00')
+                // El mes sin gastos va en null, que corta la línea; no en cero.
+                ->where('evolucion.0.gastos', null)
+                ->where('evolucion.1.clave', today()->format('Y-m'))
+                ->where('evolucion.1.alquileres', '120000.00')
+                ->where('evolucion.1.gastos', '15000.00')
+            );
+    }
+
+    public function test_la_evolucion_mensual_solo_mira_lo_que_el_usuario_ve(): void
+    {
+        $owner = Owner::factory()->conAcceso()->create();
+
+        $suya = Property::factory()->create();
+        $suya->owners()->attach($owner->id, ['porcentaje' => 100]);
+        $contrato = Contract::factory()->create(['property_id' => $suya->id]);
+        RentCharge::factory()->conMonto(80000)->delPeriodo(today())->create(['contract_id' => $contrato->id]);
+
+        $ajena = Property::factory()->create();
+        $otroContrato = Contract::factory()->create(['property_id' => $ajena->id]);
+        RentCharge::factory()->conMonto(999999)->delPeriodo(today())->create(['contract_id' => $otroContrato->id]);
+        Expense::factory()->create(['property_id' => $ajena->id, 'periodo' => today()->startOfMonth(), 'monto' => 5000]);
+
+        $this->actingAs($owner->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('evolucion', 1)
+                ->where('evolucion.0.alquileres', '80000.00')
+                ->where('evolucion.0.gastos', null)
+            );
+    }
+
     public function test_un_propietario_solo_ve_los_gastos_de_sus_propiedades(): void
     {
         $owner = Owner::factory()->conAcceso()->create();
