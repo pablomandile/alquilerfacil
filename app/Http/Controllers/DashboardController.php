@@ -50,6 +50,23 @@ class DashboardController extends Controller
             ->sortByDesc(fn (array $t) => (float) $t['neto'])
             ->values();
 
+        // Todo lo gastado por propiedad, sin mirar quién lo paga: para ver a
+        // dónde se va la plata, de mayor a menor.
+        $gastosPorPropiedad = Expense::query()
+            ->visiblePara($usuario)
+            ->selectRaw('property_id, SUM(monto) as total')
+            ->groupBy('property_id')
+            ->with('property:id,alias')
+            ->get()
+            ->map(fn (Expense $g) => [
+                'id' => $g->property_id,
+                'alias' => $g->property->alias,
+                'monto' => Decimal::desde($g->getAttribute('total')),
+            ])
+            ->filter(fn (array $g) => bccomp($g['monto'], '0', 2) > 0)
+            ->sortByDesc(fn (array $g) => (float) $g['monto'])
+            ->values();
+
         return Inertia::render('Dashboard', [
             'mes' => $mes->translatedFormat('F \d\e Y'),
             'cobranza' => [
@@ -71,6 +88,10 @@ class DashboardController extends Controller
                 'gastos_ordinarios' => Decimal::sumar($totalesPorPropiedad->pluck('gastos_ordinarios')),
                 'gastos_extraordinarios' => Decimal::sumar($totalesPorPropiedad->pluck('gastos_extraordinarios')),
                 'neto' => Decimal::sumar($totalesPorPropiedad->pluck('neto')),
+            ],
+            'gastos' => [
+                'por_propiedad' => $gastosPorPropiedad,
+                'total' => Decimal::sumar($gastosPorPropiedad->pluck('monto')),
             ],
             'resumen' => [
                 'propiedades' => Property::query()->visiblePara($usuario)->count(),

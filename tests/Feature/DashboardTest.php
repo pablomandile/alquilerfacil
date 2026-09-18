@@ -78,6 +78,54 @@ class DashboardTest extends TestCase
             );
     }
 
+    public function test_suma_los_gastos_por_propiedad_de_mayor_a_menor(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $rivadavia = Property::factory()->create(['alias' => 'Rivadavia']);
+        Expense::factory()->create(['property_id' => $rivadavia->id, 'monto' => 10000, 'a_cargo_de' => ACargoDe::Inquilino]);
+        Expense::factory()->create(['property_id' => $rivadavia->id, 'monto' => 5000.50, 'a_cargo_de' => ACargoDe::Propietarios]);
+
+        $belgrano = Property::factory()->create(['alias' => 'Belgrano']);
+        Expense::factory()->create(['property_id' => $belgrano->id, 'monto' => 40000, 'a_cargo_de' => ACargoDe::Mitades]);
+
+        // Sin gastos: no aparece en el gráfico.
+        Property::factory()->create(['alias' => 'Cochera']);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('gastos.por_propiedad', 2)
+                ->where('gastos.por_propiedad.0.alias', 'Belgrano')
+                ->where('gastos.por_propiedad.0.monto', '40000.00')
+                ->where('gastos.por_propiedad.1.alias', 'Rivadavia')
+                ->where('gastos.por_propiedad.1.monto', '15000.50')
+                ->where('gastos.total', '55000.50')
+            );
+    }
+
+    public function test_un_propietario_solo_ve_los_gastos_de_sus_propiedades(): void
+    {
+        $owner = Owner::factory()->conAcceso()->create();
+
+        $suya = Property::factory()->create(['alias' => 'Suya']);
+        $suya->owners()->attach($owner->id, ['porcentaje' => 100]);
+        Expense::factory()->create(['property_id' => $suya->id, 'monto' => 7000]);
+
+        $ajena = Property::factory()->create();
+        Expense::factory()->create(['property_id' => $ajena->id, 'monto' => 99999]);
+
+        $this->actingAs($owner->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('gastos.por_propiedad', 1)
+                ->where('gastos.por_propiedad.0.alias', 'Suya')
+                ->where('gastos.total', '7000.00')
+            );
+    }
+
     public function test_un_propietario_solo_acumula_sus_propiedades(): void
     {
         $owner = Owner::factory()->conAcceso()->create();
