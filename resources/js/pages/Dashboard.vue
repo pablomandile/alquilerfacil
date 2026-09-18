@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link } from '@inertiajs/vue3';
 import {
     Building2,
     CalendarClock,
@@ -7,21 +7,21 @@ import {
     Receipt,
     TrendingUp,
     Wallet,
-} from "@lucide/vue";
-import EstadoBadge from "@/components/EstadoBadge.vue";
-import GraficoTorta from "@/components/GraficoTorta.vue";
-import StatCard from "@/components/StatCard.vue";
-import { Button } from "@/components/ui/button";
-import { pesos, pesosRedondos, porcentaje } from "@/lib/formato";
-import { dashboard } from "@/routes";
-import rutasAjustes from "@/routes/ajustes";
-import rutasCobranzas from "@/routes/cobranzas";
-import rutasGastos from "@/routes/gastos";
-import rutasPropiedades from "@/routes/propiedades";
+} from '@lucide/vue';
+import EstadoBadge from '@/components/EstadoBadge.vue';
+import GraficoTorta from '@/components/GraficoTorta.vue';
+import StatCard from '@/components/StatCard.vue';
+import { Button } from '@/components/ui/button';
+import { pesos, pesosRedondos, porcentaje } from '@/lib/formato';
+import { dashboard } from '@/routes';
+import rutasAjustes from '@/routes/ajustes';
+import rutasCobranzas from '@/routes/cobranzas';
+import rutasGastos from '@/routes/gastos';
+import rutasPropiedades from '@/routes/propiedades';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: "Panel", href: dashboard() }],
+        breadcrumbs: [{ title: 'Panel', href: dashboard() }],
     },
 });
 
@@ -54,7 +54,18 @@ defineProps<{
         neto: string;
     };
     gastos: {
-        por_propiedad: Array<{ id: number; alias: string; monto: string }>;
+        por_propiedad: Array<{
+            id: number;
+            alias: string;
+            total: string;
+            categorias: Array<{
+                clave: string;
+                etiqueta: string;
+                monto: string;
+                color: number;
+            }>;
+        }>;
+        leyenda: Array<{ clave: string; etiqueta: string; color: number }>;
         total: string;
     };
     ajustesPendientes: Array<{
@@ -320,8 +331,10 @@ defineProps<{
                 </p>
             </section>
 
-            <!-- A dónde se va la plata, por propiedad -->
-            <section class="tarjeta tinte-rosa rounded-xl border">
+            <!-- A dónde se va la plata: una torta por propiedad, abierta por
+                 categoría. La paleta va acá para que las tortas y la leyenda
+                 hereden los mismos colores. -->
+            <section class="tarjeta tinte-rosa paleta-gastos rounded-xl border">
                 <header
                     class="flex items-center justify-between border-b px-4 py-3"
                 >
@@ -331,17 +344,52 @@ defineProps<{
                     </Button>
                 </header>
 
-                <GraficoTorta
-                    v-if="gastos.por_propiedad.length"
-                    :items="
-                        gastos.por_propiedad.map((g) => ({
-                            id: g.id,
-                            etiqueta: g.alias,
-                            valor: g.monto,
-                        }))
-                    "
-                    etiqueta-total="Gastos"
-                />
+                <template v-if="gastos.por_propiedad.length">
+                    <div
+                        class="flex flex-wrap justify-center gap-x-6 gap-y-5 px-4 py-5"
+                    >
+                        <GraficoTorta
+                            v-for="p in gastos.por_propiedad"
+                            :key="p.id"
+                            class="w-36"
+                            :porciones="p.categorias"
+                            :titulo="p.alias"
+                        />
+                    </div>
+
+                    <!-- Una sola leyenda para todas las tortas: así el color
+                         nunca es lo único que identifica a una categoría. -->
+                    <ul
+                        class="flex flex-wrap gap-x-4 gap-y-1.5 border-t px-4 py-3 text-xs"
+                    >
+                        <li
+                            v-for="c in gastos.leyenda"
+                            :key="c.clave"
+                            class="flex items-center gap-1.5"
+                        >
+                            <span
+                                class="size-2.5 shrink-0 rounded-full"
+                                :style="{
+                                    background: `var(--torta-${c.color})`,
+                                }"
+                                aria-hidden="true"
+                            />
+                            {{ c.etiqueta }}
+                        </li>
+                    </ul>
+
+                    <div
+                        class="flex items-center justify-between gap-3 border-t px-4 py-3 text-sm"
+                    >
+                        <span class="text-muted-foreground">
+                            Total de gastos
+                        </span>
+                        <span class="font-semibold tabular-nums">
+                            {{ pesos(gastos.total) }}
+                        </span>
+                    </div>
+                </template>
+
                 <p v-else class="text-muted-foreground px-4 py-6 text-sm">
                     Todavía no hay gastos cargados.
                 </p>
@@ -381,7 +429,7 @@ defineProps<{
                         <span
                             class="text-muted-foreground text-xs first-letter:uppercase"
                         >
-                            {{ indice.fecha ?? "sin datos" }}
+                            {{ indice.fecha ?? 'sin datos' }}
                         </span>
                         <span
                             v-if="indice.variacion !== null"

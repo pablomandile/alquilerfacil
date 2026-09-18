@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CategoriaGasto;
 use App\Enums\EstadoCargo;
 use App\Enums\Indice;
 use App\Models\Contract;
@@ -12,6 +13,7 @@ use App\Models\RentAdjustment;
 use App\Models\RentCharge;
 use App\Support\Decimal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,21 +52,66 @@ class DashboardController extends Controller
             ->sortByDesc(fn (array $t) => (float) $t['neto'])
             ->values();
 
-        // Todo lo gastado por propiedad, sin mirar quién lo paga: para ver a
-        // dónde se va la plata, de mayor a menor.
-        $gastosPorPropiedad = Expense::query()
+        // Todo lo gastado por propiedad y categoría, sin mirar quién lo paga:
+        // para ver a dónde se va la plata.
+        $gastos = Expense::query()
             ->visiblePara($usuario)
-            ->selectRaw('property_id, SUM(monto) as total')
-            ->groupBy('property_id')
+            ->selectRaw('property_id, categoria, SUM(monto) as total')
+            ->groupBy('property_id', 'categoria')
             ->with('property:id,alias')
             ->get()
             ->map(fn (Expense $g) => [
-                'id' => $g->property_id,
+                'property_id' => $g->property_id,
                 'alias' => $g->property->alias,
+                'categoria' => $g->categoria,
                 'monto' => Decimal::desde($g->getAttribute('total')),
             ])
-            ->filter(fn (array $g) => bccomp($g['monto'], '0', 2) > 0)
-            ->sortByDesc(fn (array $g) => (float) $g['monto'])
+            ->filter(fn (array $g) => bccomp($g['monto'], '0', 2) > 0);
+
+        // El color de cada categoría sale de su lugar en el enum y no de cuánto
+        // suma: así una categoría no cambia de color al cargar un gasto nuevo,
+        // y las porciones que se tocan son, salvo salteo, los pares que validó
+        // la guía de gráficos. Las tortas y la leyenda usan este mismo orden.
+        $orden = collect(CategoriaGasto::cases());
+
+        $gastosPorPropiedad = $gastos
+            ->groupBy('property_id')
+            ->map(function (Collection $grupo, int $propertyId) use ($orden) {
+                // Los gastos en cero ya quedaron afuera, así que alcanza con
+                // mirar qué categorías tiene esta propiedad.
+                $claves = $grupo->map(fn (array $g) => $g['categoria']->value);
+
+                return [
+                    'id' => $propertyId,
+                    'alias' => $grupo->first()['alias'],
+                    'total' => Decimal::sumar($grupo->pluck('monto')),
+                    'categorias' => $orden
+                        ->map(fn (CategoriaGasto $c, int $n) => [
+                            'clave' => $c->value,
+                            'etiqueta' => $c->label(),
+                            'color' => $n + 1,
+                            'monto' => Decimal::sumar(
+                                $grupo->filter(fn (array $g) => $g['categoria'] === $c)->pluck('monto')
+                            ),
+                        ])
+                        ->filter(fn (array $c) => $claves->contains($c['clave']))
+                        ->values(),
+                ];
+            })
+            ->sortByDesc(fn (array $g) => (float) $g['total'])
+            ->values();
+
+        // La leyenda es una sola para todas las tortas, y sólo nombra las
+        // categorías que aparecen en alguna.
+        $presentes = $gastos->map(fn (array $g) => $g['categoria']);
+
+        $leyendaDeGastos = $orden
+            ->map(fn (CategoriaGasto $c, int $n) => [
+                'clave' => $c->value,
+                'etiqueta' => $c->label(),
+                'color' => $n + 1,
+            ])
+            ->filter(fn (array $c) => $presentes->contains('value', $c['clave']))
             ->values();
 
         return Inertia::render('Dashboard', [
@@ -91,7 +138,8 @@ class DashboardController extends Controller
             ],
             'gastos' => [
                 'por_propiedad' => $gastosPorPropiedad,
-                'total' => Decimal::sumar($gastosPorPropiedad->pluck('monto')),
+                'leyenda' => $leyendaDeGastos,
+                'total' => Decimal::sumar($gastosPorPropiedad->pluck('total')),
             ],
             'resumen' => [
                 'propiedades' => Property::query()->visiblePara($usuario)->count(),

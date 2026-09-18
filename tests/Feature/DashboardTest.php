@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ACargoDe;
+use App\Enums\CategoriaGasto;
 use App\Models\Contract;
 use App\Models\Expense;
 use App\Models\Owner;
@@ -78,16 +79,18 @@ class DashboardTest extends TestCase
             );
     }
 
-    public function test_suma_los_gastos_por_propiedad_de_mayor_a_menor(): void
+    public function test_abre_los_gastos_de_cada_propiedad_por_categoria(): void
     {
         $admin = User::factory()->admin()->create();
 
+        // Rivadavia: dos gastos de luz (se suman en una porción) y uno de agua.
         $rivadavia = Property::factory()->create(['alias' => 'Rivadavia']);
-        Expense::factory()->create(['property_id' => $rivadavia->id, 'monto' => 10000, 'a_cargo_de' => ACargoDe::Inquilino]);
-        Expense::factory()->create(['property_id' => $rivadavia->id, 'monto' => 5000.50, 'a_cargo_de' => ACargoDe::Propietarios]);
+        Expense::factory()->create(['property_id' => $rivadavia->id, 'categoria' => CategoriaGasto::Luz, 'monto' => 10000]);
+        Expense::factory()->create(['property_id' => $rivadavia->id, 'categoria' => CategoriaGasto::Luz, 'monto' => 5000.50]);
+        Expense::factory()->create(['property_id' => $rivadavia->id, 'categoria' => CategoriaGasto::Agua, 'monto' => 3000]);
 
         $belgrano = Property::factory()->create(['alias' => 'Belgrano']);
-        Expense::factory()->create(['property_id' => $belgrano->id, 'monto' => 40000, 'a_cargo_de' => ACargoDe::Mitades]);
+        Expense::factory()->create(['property_id' => $belgrano->id, 'categoria' => CategoriaGasto::Expensas, 'monto' => 40000]);
 
         // Sin gastos: no aparece en el gráfico.
         Property::factory()->create(['alias' => 'Cochera']);
@@ -96,12 +99,45 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
+                // Las propiedades van de mayor a menor gasto.
                 ->has('gastos.por_propiedad', 2)
                 ->where('gastos.por_propiedad.0.alias', 'Belgrano')
-                ->where('gastos.por_propiedad.0.monto', '40000.00')
+                ->where('gastos.por_propiedad.0.total', '40000.00')
+                ->has('gastos.por_propiedad.0.categorias', 1)
                 ->where('gastos.por_propiedad.1.alias', 'Rivadavia')
-                ->where('gastos.por_propiedad.1.monto', '15000.50')
-                ->where('gastos.total', '55000.50')
+                ->where('gastos.por_propiedad.1.total', '18000.50')
+                // Las categorías, en el orden del enum, con la luz sumada.
+                ->has('gastos.por_propiedad.1.categorias', 2)
+                ->where('gastos.por_propiedad.1.categorias.0.clave', 'luz')
+                ->where('gastos.por_propiedad.1.categorias.0.monto', '15000.50')
+                ->where('gastos.por_propiedad.1.categorias.1.clave', 'agua')
+                ->where('gastos.por_propiedad.1.categorias.1.monto', '3000.00')
+                ->where('gastos.total', '58000.50')
+            );
+    }
+
+    public function test_el_color_de_una_categoria_no_depende_de_cuanto_suma(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        // La luz es el primer color del enum y las expensas el cuarto, aunque
+        // acá las expensas sean el gasto más grande.
+        $propiedad = Property::factory()->create();
+        Expense::factory()->create(['property_id' => $propiedad->id, 'categoria' => CategoriaGasto::Luz, 'monto' => 1000]);
+        Expense::factory()->create(['property_id' => $propiedad->id, 'categoria' => CategoriaGasto::Expensas, 'monto' => 90000]);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('gastos.por_propiedad.0.categorias.0.color', 1)
+                ->where('gastos.por_propiedad.0.categorias.1.color', 4)
+                // La leyenda nombra sólo lo que aparece, con el mismo color.
+                ->has('gastos.leyenda', 2)
+                ->where('gastos.leyenda.0.clave', 'luz')
+                ->where('gastos.leyenda.0.color', 1)
+                ->where('gastos.leyenda.1.clave', 'expensas')
+                ->where('gastos.leyenda.1.color', 4)
             );
     }
 

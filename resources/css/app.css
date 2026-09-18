@@ -312,6 +312,45 @@
     --tinte-borde: var(--mezcla-borde);
 }
 
+/*
+ * La paleta de las tortas de gastos: un color por categoría, en el orden del
+ * enum CategoriaGasto, y el noveno —«Otro», el cajón de sastre— en gris.
+ *
+ * Son los ocho colores de la guía de gráficos en su orden validado: así los
+ * pares que se tocan en el anillo son los que la guía mide como distinguibles.
+ * Con nueve categorías a la vez hay pares parecidos igual (amarillo/naranja,
+ * rojo/naranja), por eso cada porción va siempre acompañada de su nombre: en la
+ * leyenda, al señalarla y en el listado de gastos.
+ *
+ * Va acá y no en el componente porque la leyenda es una sola, vive fuera de las
+ * tortas, y las variables tienen que heredarse desde la tarjeta que las abraza.
+ */
+@utility paleta-gastos {
+    --torta-1: #2a78d6;
+    --torta-2: #eb6834;
+    --torta-3: #1baf7a;
+    --torta-4: #eda100;
+    --torta-5: #e87ba4;
+    --torta-6: #008300;
+    --torta-7: #4a3aa7;
+    --torta-8: #e34948;
+    --torta-9: #898884;
+
+    /* Los pasos del modo oscuro son los mismos matices elegidos para ese fondo:
+       no es un invertido automático. */
+    :is(.dark *) & {
+        --torta-1: #3987e5;
+        --torta-2: #d95926;
+        --torta-3: #199e70;
+        --torta-4: #c98500;
+        --torta-5: #d55181;
+        --torta-6: #008300;
+        --torta-7: #9085e9;
+        --torta-8: #e66767;
+        --torta-9: #898884;
+    }
+}
+
 /* El ícono de la tarjeta toma el color del tinte; sin tinte, el gris de siempre. */
 @utility icono-tarjeta {
     color: var(--tinte, var(--muted-foreground));

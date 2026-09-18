@@ -1,65 +1,54 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { pesos, pesosRedondos } from "@/lib/formato";
+import { computed, ref } from 'vue';
+import { pesos, pesosRedondos } from '@/lib/formato';
 
-const props = withDefaults(
-    defineProps<{
-        /** Ya vienen de mayor a menor. Los montos viajan como string. */
-        items: Array<{ id: number | string; etiqueta: string; valor: string }>;
-        /** Lo que dice el centro cuando no hay nada señalado. */
-        etiquetaTotal?: string;
-    }>(),
-    { etiquetaTotal: "Total" },
-);
-
-// Los colores de la paleta son cinco: el resto se junta en «Otras».
-const MAXIMO = 5;
+const props = defineProps<{
+    /** Ya vienen en el orden fijo de la leyenda. Los montos, como string, y el
+     *  color es el número de slot de la paleta: lo fija la categoría, no el
+     *  ranking, así que es el mismo en todas las tortas. */
+    porciones: Array<{
+        clave: string;
+        etiqueta: string;
+        monto: string;
+        color: number;
+    }>;
+    /** El nombre de la propiedad: va abajo del anillo. */
+    titulo: string;
+}>();
 
 // Un anillo de radio 38 en un lienzo de 100: la circunferencia es lo que se
 // reparte entre las porciones.
 const RADIO = 38;
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
-// Separación entre porciones, para que no se pisen los colores.
-const HUECO = 1.2;
+// Separación entre porciones, para que no se toquen los colores.
+const HUECO = 1.5;
 
-const porcentajeFmt = new Intl.NumberFormat("es-AR", {
-    style: "percent",
+const porcentajeFmt = new Intl.NumberFormat('es-AR', {
+    style: 'percent',
     maximumFractionDigits: 1,
 });
 
-const activo = ref<number | null>(null);
+const activa = ref<number | null>(null);
 
-const porciones = computed(() => {
-    const sueltos = props.items.slice(0, MAXIMO);
-    const resto = props.items.slice(MAXIMO);
+const total = computed(() =>
+    props.porciones.reduce((acc, p) => acc + Number(p.monto), 0),
+);
 
-    const lista = sueltos.map((i, n) => ({
-        clave: String(i.id),
-        etiqueta: i.etiqueta,
-        valor: Number(i.valor),
-        color: `var(--torta-${n + 1})`,
-    }));
-
-    if (resto.length) {
-        lista.push({
-            clave: "otras",
-            etiqueta: `Otras (${resto.length})`,
-            valor: resto.reduce((acc, i) => acc + Number(i.valor), 0),
-            color: "var(--torta-resto)",
-        });
-    }
-
-    const total = lista.reduce((acc, p) => acc + p.valor, 0);
+const arcos = computed(() => {
     let acumulado = 0;
 
-    return lista.map((p) => {
-        const parte = total > 0 ? p.valor / total : 0;
+    return props.porciones.map((p) => {
+        const valor = Number(p.monto);
+        const parte = total.value > 0 ? valor / total.value : 0;
         const largo = parte * CIRCUNFERENCIA;
         const arco = {
             ...p,
+            valor,
             parte,
+            color: `var(--torta-${p.color})`,
             // Con una sola porción el anillo cierra solo, sin hueco.
-            largo: lista.length > 1 ? Math.max(largo - HUECO, 0) : largo,
+            largo:
+                props.porciones.length > 1 ? Math.max(largo - HUECO, 0) : largo,
             desde: acumulado,
         };
         acumulado += largo;
@@ -68,116 +57,85 @@ const porciones = computed(() => {
     });
 });
 
-const total = computed(() =>
-    porciones.value.reduce((acc, p) => acc + p.valor, 0),
+const senalada = computed(() =>
+    activa.value === null ? null : (arcos.value[activa.value] ?? null),
 );
 
-const seleccionada = computed(() =>
-    activo.value === null ? null : (porciones.value[activo.value] ?? null),
+/** Para quien no ve el gráfico: el desglose entero en una frase. */
+const descripcion = computed(
+    () =>
+        `${props.titulo}: ${pesosRedondos(total.value)} en gastos. ` +
+        arcos.value
+            .map(
+                (a) =>
+                    `${a.etiqueta} ${pesos(a.valor)} (${porcentajeFmt.format(a.parte)})`,
+            )
+            .join(', '),
 );
 
 function alternar(indice: number) {
-    activo.value = activo.value === indice ? null : indice;
+    activa.value = activa.value === indice ? null : indice;
 }
 </script>
 
 <template>
-    <div
-        class="grafico-torta flex flex-col items-center gap-5 p-4 sm:flex-row sm:gap-6"
-        @mouseleave="activo = null"
+    <figure
+        class="flex flex-col items-center gap-2"
+        @mouseleave="activa = null"
     >
-        <div class="relative size-44 shrink-0">
+        <div class="relative size-32">
             <svg
                 viewBox="0 0 100 100"
                 class="size-full -rotate-90"
                 role="img"
-                :aria-label="`${etiquetaTotal}: ${pesosRedondos(total)}`"
+                :aria-label="descripcion"
             >
                 <circle
-                    v-for="(p, n) in porciones"
-                    :key="p.clave"
+                    v-for="(a, n) in arcos"
+                    :key="a.clave"
                     cx="50"
                     cy="50"
                     :r="RADIO"
                     fill="none"
-                    :stroke="p.color"
-                    :stroke-width="activo === n ? 15 : 12"
-                    :stroke-dasharray="`${p.largo} ${CIRCUNFERENCIA - p.largo}`"
-                    :stroke-dashoffset="-p.desde"
-                    :opacity="activo === null || activo === n ? 1 : 0.35"
+                    :stroke="a.color"
+                    :stroke-width="activa === n ? 16 : 13"
+                    :stroke-dasharray="`${a.largo} ${CIRCUNFERENCIA - a.largo}`"
+                    :stroke-dashoffset="-a.desde"
+                    :opacity="activa === null || activa === n ? 1 : 0.35"
                     class="cursor-pointer transition-[stroke-width,opacity]"
-                    @mouseenter="activo = n"
+                    @mouseenter="activa = n"
                     @click="alternar(n)"
                 />
             </svg>
 
-            <!-- El centro dice el total, o lo de la porción señalada. -->
+            <!-- El centro dice siempre el total: no se mueve al señalar. -->
             <div
-                class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-8 text-center"
+                class="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center"
             >
-                <span
-                    class="text-muted-foreground line-clamp-1 text-xs"
-                    :title="seleccionada?.etiqueta"
-                >
-                    {{ seleccionada?.etiqueta ?? etiquetaTotal }}
-                </span>
-                <span class="text-base font-semibold tabular-nums">
-                    {{ pesosRedondos(seleccionada?.valor ?? total) }}
-                </span>
-                <span
-                    v-if="seleccionada"
-                    class="text-muted-foreground text-xs tabular-nums"
-                >
-                    {{ porcentajeFmt.format(seleccionada.parte) }}
+                <span class="text-sm font-semibold tabular-nums">
+                    {{ pesosRedondos(total) }}
                 </span>
             </div>
         </div>
 
-        <!-- La leyenda es también la tabla: nombre, monto y porcentaje. -->
-        <ul class="w-full min-w-0 flex-1 space-y-1 text-sm">
-            <li
-                v-for="(p, n) in porciones"
-                :key="p.clave"
-                class="hover:bg-foreground/5 flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-opacity"
-                :class="activo !== null && activo !== n ? 'opacity-50' : ''"
-                @mouseenter="activo = n"
-                @click="alternar(n)"
-            >
-                <span
-                    class="size-2.5 shrink-0 rounded-full"
-                    :style="{ background: p.color }"
-                    aria-hidden="true"
-                />
-                <span class="min-w-0 flex-1 truncate">{{ p.etiqueta }}</span>
-                <span class="text-muted-foreground text-xs tabular-nums">
-                    {{ porcentajeFmt.format(p.parte) }}
+        <!-- Abajo el nombre de la propiedad; al señalar una porción, su detalle. -->
+        <figcaption class="w-full min-w-0 text-center text-xs">
+            <template v-if="senalada">
+                <span class="block truncate font-medium">
+                    {{ senalada.etiqueta }}
                 </span>
-                <span class="w-28 text-right tabular-nums">
-                    {{ pesos(p.valor) }}
+                <span class="text-muted-foreground tabular-nums">
+                    {{ pesos(senalada.valor) }} ·
+                    {{ porcentajeFmt.format(senalada.parte) }}
                 </span>
-            </li>
-        </ul>
-    </div>
+            </template>
+            <template v-else>
+                <span class="block truncate font-medium">{{ titulo }}</span>
+                <span class="text-muted-foreground">
+                    {{ porciones.length }}
+                    {{ porciones.length === 1 ? 'categoría' : 'categorías' }}
+                </span>
+            </template>
+        </figcaption>
+    </figure>
 </template>
-
-<style scoped>
-/* Paleta categórica en orden fijo (azul, naranja, aqua, amarillo, magenta) y
-   un gris neutro para «Otras». En oscuro son los mismos matices con los pasos
-   pensados para ese fondo. */
-.grafico-torta {
-    --torta-1: #2a78d6;
-    --torta-2: #eb6834;
-    --torta-3: #1baf7a;
-    --torta-4: #eda100;
-    --torta-5: #e87ba4;
-    --torta-resto: #898884;
-}
-
-:global(.dark) .grafico-torta {
-    --torta-1: #3987e5;
-    --torta-2: #d95926;
-    --torta-3: #199e70;
-    --torta-4: #c98500;
-    --torta-5: #d55181;
-}
-</style>
