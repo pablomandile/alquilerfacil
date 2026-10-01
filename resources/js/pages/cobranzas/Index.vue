@@ -142,9 +142,7 @@ function totalDeCargo(cargo: Cargo): number {
 function textoMensajeDeCargo(cargo: Cargo): string {
     const nombre = cargo.inquilino.split(' ')[0];
     const lineas = itemsDeCargo(cargo).map(
-        (i) =>
-            `• ${i.concepto} — ${pesos(i.monto)}` +
-            (i.vencimiento ? ` (vence ${i.vencimiento})` : ''),
+        (i) => `• ${i.concepto} — ${pesos(i.monto)}`,
     );
     const adjuntos = itemsDeCargo(cargo).flatMap((i) => i.adjuntos ?? []);
     return [

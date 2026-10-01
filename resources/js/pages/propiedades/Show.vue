@@ -233,9 +233,7 @@ const textoMensaje = computed(() => {
     const nombre = m.inquilino.split(' ')[0];
 
     const lineas = itemsDelMes.value.map(
-        (i) =>
-            `• ${i.concepto} — ${pesos(i.monto)}` +
-            (i.vencimiento ? ` (vence ${i.vencimiento})` : ''),
+        (i) => `• ${i.concepto} — ${pesos(i.monto)}`,
     );
 
     const adjuntos = itemsDelMes.value.flatMap((i) => i.adjuntos ?? []);
