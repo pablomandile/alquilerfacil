@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ACargoDe;
+use App\Enums\CategoriaGasto;
 use App\Enums\EstadoContrato;
 use App\Enums\Indice;
 use App\Enums\TipoDocumentoContrato;
@@ -88,6 +90,10 @@ class ContractController extends Controller
                 'estado' => $contract->estado->value,
                 'estado_label' => $contract->estado->label(),
                 'notas' => $contract->notas,
+                'gastos' => collect($contract->gastos ?? [])->map(fn (array $g) => [
+                    'concepto' => $g['descripcion'] ?: CategoriaGasto::from($g['categoria'])->label(),
+                    'a_cargo_de' => ACargoDe::from($g['a_cargo_de'])->label(),
+                ])->all(),
                 'ajustes' => $contract->adjustments->map(fn ($a) => [
                     'id' => $a->id,
                     'vigencia' => $a->vigencia_desde->format('d/m/Y'),
@@ -171,6 +177,7 @@ class ContractController extends Controller
                 'proximo_ajuste' => $contract->proximo_ajuste?->toDateString(),
                 'indice' => $contract->indice->value,
                 'estado' => $contract->estado->value,
+                'gastos' => $contract->gastos ?? [],
             ],
         ]);
     }
@@ -221,7 +228,17 @@ class ContractController extends Controller
             'redondeo' => ['required', 'integer', Rule::in([0, 100, 1000])],
             'estado' => ['required', Rule::enum(EstadoContrato::class)],
             'notas' => ['nullable', 'string', 'max:5000'],
+            'gastos' => ['nullable', 'array', 'max:20'],
+            'gastos.*.categoria' => ['required', Rule::enum(CategoriaGasto::class)],
+            'gastos.*.descripcion' => ['nullable', 'string', 'max:255'],
+            'gastos.*.a_cargo_de' => ['required', Rule::enum(ACargoDe::class)],
         ]);
+
+        $datos['gastos'] = array_map(fn (array $g) => [
+            'categoria' => $g['categoria'],
+            'descripcion' => trim($g['descripcion'] ?? '') ?: null,
+            'a_cargo_de' => $g['a_cargo_de'],
+        ], array_values($datos['gastos'] ?? []));
 
         // El alquiler se lleva siempre en pesos enteros, sin centavos.
         foreach (['monto_base', 'monto_actual'] as $campo) {
@@ -247,6 +264,8 @@ class ContractController extends Controller
                 ->get(['id', 'nombre']),
             'indices' => Opciones::de(Indice::class),
             'estados' => Opciones::de(EstadoContrato::class),
+            'categorias' => Opciones::de(CategoriaGasto::class),
+            'aCargoDe' => Opciones::de(ACargoDe::class),
             'opcionesRedondeo' => [
                 ['value' => 0, 'label' => 'Sólo a pesos enteros'],
                 ['value' => 100, 'label' => 'Al centenar más cercano'],

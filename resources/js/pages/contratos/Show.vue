@@ -50,6 +50,7 @@ const props = defineProps<{
         estado: string;
         estado_label: string;
         notas: string | null;
+        gastos: Array<{ concepto: string; a_cargo_de: string }>;
         ajustes: Array<{
             id: number;
             vigencia: string;
@@ -215,6 +216,19 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
                         <dd>
                             {{ contrato.indice }} cada
                             {{ contrato.frecuencia_meses }} meses
+                        </dd>
+                    </div>
+                    <div v-if="contrato.gastos.length" class="col-span-2">
+                        <dt class="text-muted-foreground text-xs">Gastos</dt>
+                        <dd>
+                            <ul class="space-y-0.5">
+                                <li v-for="(g, i) in contrato.gastos" :key="i">
+                                    {{ g.concepto }}
+                                    <span class="text-muted-foreground">
+                                        · {{ g.a_cargo_de }}
+                                    </span>
+                                </li>
+                            </ul>
                         </dd>
                     </div>
                 </dl>

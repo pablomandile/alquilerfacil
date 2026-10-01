@@ -17,6 +17,15 @@ import rutasGastosDocumentos from '@/routes/gastos/documentos';
 
 type Opcion = { value: string; label: string };
 
+type GastoDelContrato = {
+    categoria: string;
+    descripcion: string | null;
+    a_cargo_de: string;
+    tipo: string;
+    concepto: string;
+    a_cargo_de_label: string;
+};
+
 type Documento = {
     id: number;
     tipo: string;
@@ -29,7 +38,12 @@ type Documento = {
 
 const props = defineProps<{
     propiedades: Array<{ id: number; alias: string }>;
-    contratos: Array<{ id: number; property_id: number; label: string }>;
+    contratos: Array<{
+        id: number;
+        property_id: number;
+        label: string;
+        gastos: GastoDelContrato[];
+    }>;
     tipos: Opcion[];
     categorias: Opcion[];
     aCargoDe: Opcion[];
@@ -150,20 +164,87 @@ function borrarDocumento(id: number) {
     });
 }
 
-/* Los gastos extraordinarios e impuestos normalmente los soportan los dueños;
-   los servicios, el inquilino. Se sugiere al cambiar el tipo, sin imponerlo. */
+const contratosDeLaPropiedad = computed(() =>
+    props.contratos.filter((c) => c.property_id === form.property_id),
+);
+
+/* Gastos que el contrato dice que incluye: se ofrecen como atajo y deciden
+   quién paga cuando se elige su categoría. */
+const gastosDelContrato = computed<GastoDelContrato[]>(
+    () => props.contratos.find((c) => c.id === form.contract_id)?.gastos ?? [],
+);
+
+// Sólo si la categoría identifica un único gasto del contrato: con dos de la
+// misma categoría no hay forma de saber cuál es.
+function gastoDelContratoPara(categoria: string): GastoDelContrato | null {
+    const coinciden = gastosDelContrato.value.filter(
+        (g) => g.categoria === categoria,
+    );
+    return coinciden.length === 1 ? coinciden[0] : null;
+}
+
+function usarGastoDelContrato(g: GastoDelContrato) {
+    form.categoria = g.categoria;
+    form.tipo = g.tipo;
+    form.descripcion = g.descripcion ?? '';
+    form.a_cargo_de = g.a_cargo_de;
+}
+
+function esGastoElegido(g: GastoDelContrato): boolean {
+    return (
+        form.categoria === g.categoria &&
+        form.descripcion === (g.descripcion ?? '') &&
+        form.a_cargo_de === g.a_cargo_de
+    );
+}
+
+function aplicarContratoALaCategoria() {
+    const g = gastoDelContratoPara(form.categoria);
+    if (!g) return;
+    form.a_cargo_de = g.a_cargo_de;
+    if (!form.descripcion) form.descripcion = g.descripcion ?? '';
+}
+
+/* Al elegir la propiedad de un gasto nuevo, se asocia sola a su contrato
+   activo si hay uno solo. */
+watch(
+    () => form.property_id,
+    () => {
+        if (editando.value) return;
+        const contratos = contratosDeLaPropiedad.value;
+        if (contratos.length === 1) form.contract_id = contratos[0].id;
+        else if (!contratos.some((c) => c.id === form.contract_id))
+            form.contract_id = null;
+    },
+);
+
+watch(
+    () => form.contract_id,
+    () => {
+        if (!editando.value) aplicarContratoALaCategoria();
+    },
+);
+
+watch(
+    () => form.categoria,
+    () => {
+        if (!editando.value) aplicarContratoALaCategoria();
+    },
+);
+
+/* Sin regla del contrato, los gastos extraordinarios e impuestos normalmente
+   los soportan los dueños; los servicios, el inquilino. Se sugiere al cambiar
+   el tipo, sin imponerlo. */
 watch(
     () => form.tipo,
     (tipo) => {
         if (editando.value) return;
+        if (gastosDelContrato.value.some((g) => g.categoria === form.categoria))
+            return;
         form.a_cargo_de = ['extraordinario', 'impuesto'].includes(tipo)
             ? 'propietarios'
             : 'inquilino';
     },
-);
-
-const contratosDeLaPropiedad = computed(() =>
-    props.contratos.filter((c) => c.property_id === form.property_id),
 );
 
 function enviar() {
@@ -186,9 +267,12 @@ function enviar() {
     <div class="tinte-rosa flex flex-1 flex-col gap-6 p-4">
         <PageHeader :titulo="editando ? 'Editar gasto' : 'Nuevo gasto'" />
 
-        <form class="grid max-w-2xl gap-6" @submit.prevent="enviar">
+        <form
+            class="grid w-full max-w-2xl grid-cols-1 gap-6"
+            @submit.prevent="enviar"
+        >
             <section
-                class="tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="tarjeta grid grid-cols-1 gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2 sm:col-span-2">
                     <Label for="property_id">Propiedad</Label>
@@ -208,6 +292,34 @@ function enviar() {
                         </option>
                     </select>
                     <InputError :message="form.errors.property_id" />
+                </div>
+
+                <div
+                    v-if="gastosDelContrato.length"
+                    class="grid gap-2 sm:col-span-2"
+                >
+                    <p class="text-muted-foreground text-xs">
+                        Gastos del contrato
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            v-for="(g, i) in gastosDelContrato"
+                            :key="i"
+                            type="button"
+                            class="cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors"
+                            :class="
+                                esGastoElegido(g)
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'hover:bg-muted'
+                            "
+                            @click="usarGastoDelContrato(g)"
+                        >
+                            {{ g.concepto }}
+                            <span class="opacity-70">
+                                · {{ g.a_cargo_de_label }}
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid gap-2">
@@ -255,7 +367,7 @@ function enviar() {
             </section>
 
             <section
-                class="tarjeta grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                class="tarjeta grid grid-cols-1 gap-4 rounded-xl border p-4 sm:grid-cols-2"
             >
                 <div class="grid gap-2">
                     <Label for="monto">Monto</Label>
@@ -277,7 +389,7 @@ function enviar() {
                         <select
                             id="periodo-mes"
                             v-model.number="periodoMes"
-                            class="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                            class="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
                         >
                             <option
                                 v-for="m in meses"
@@ -290,7 +402,7 @@ function enviar() {
                         <select
                             v-model.number="periodoAnio"
                             aria-label="Año del período"
-                            class="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                            class="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
                         >
                             <option v-for="a in anios" :key="a" :value="a">
                                 {{ a }}
@@ -389,7 +501,7 @@ function enviar() {
                 <!-- Adjuntos ya cargados (sólo al editar) -->
                 <ul
                     v-if="gasto?.documentos.length"
-                    class="divide-y rounded-lg border"
+                    class="min-w-0 divide-y rounded-lg border"
                 >
                     <li
                         v-for="d in gasto.documentos"
@@ -407,8 +519,11 @@ function enviar() {
                             <p class="text-sm font-medium">
                                 {{ d.tipo_label }}
                             </p>
-                            <p class="text-muted-foreground truncate text-xs">
-                                {{ d.nombre }} · {{ tamano(d.tamano) }}
+                            <p class="text-muted-foreground text-xs break-all">
+                                {{ d.nombre }}
+                            </p>
+                            <p class="text-muted-foreground text-xs">
+                                {{ tamano(d.tamano) }}
                                 <span v-if="d.fecha"> · {{ d.fecha }}</span>
                             </p>
                         </button>
@@ -443,24 +558,24 @@ function enviar() {
                 </ul>
 
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="grid gap-2">
+                    <div class="grid min-w-0 gap-2">
                         <Label for="factura">Factura / expensa</Label>
                         <input
                             id="factura"
                             type="file"
                             accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
-                            class="file:bg-secondary text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                            class="file:bg-secondary w-full text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
                             @change="elegirArchivo('factura', $event)"
                         />
                         <InputError :message="form.errors.factura" />
                     </div>
-                    <div class="grid gap-2">
+                    <div class="grid min-w-0 gap-2">
                         <Label for="comprobante">Comprobante de pago</Label>
                         <input
                             id="comprobante"
                             type="file"
                             accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
-                            class="file:bg-secondary text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                            class="file:bg-secondary w-full text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
                             @change="elegirArchivo('comprobante', $event)"
                         />
                         <InputError :message="form.errors.comprobante" />

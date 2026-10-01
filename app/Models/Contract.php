@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Storage;
  * @property CarbonInterface|null $proximo_ajuste
  * @property int $redondeo
  * @property EstadoContrato $estado
+ * @property list<array{categoria: string, descripcion: string|null, a_cargo_de: string}>|null $gastos
  * @property string|null $notas
  * @property-read Property $property
  * @property-read Tenant $tenant
@@ -37,7 +38,7 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable([
     'property_id', 'tenant_id', 'fecha_inicio', 'fecha_fin', 'monto_base',
     'monto_actual', 'dia_vencimiento', 'deposito', 'indice', 'frecuencia_meses',
-    'proximo_ajuste', 'redondeo', 'estado', 'notas',
+    'proximo_ajuste', 'redondeo', 'gastos', 'estado', 'notas',
 ])]
 class Contract extends Model
 {
@@ -66,6 +67,7 @@ class Contract extends Model
             'deposito' => 'decimal:2',
             'indice' => Indice::class,
             'estado' => EstadoContrato::class,
+            'gastos' => 'array',
         ];
     }
 

@@ -263,6 +263,12 @@ class ExpenseController extends Controller
                     'id' => $c->id,
                     'property_id' => $c->property_id,
                     'label' => $c->property->alias,
+                    'gastos' => collect($c->gastos ?? [])->map(fn (array $g) => [
+                        ...$g,
+                        'tipo' => CategoriaGasto::from($g['categoria'])->tipoPorDefecto()->value,
+                        'concepto' => $g['descripcion'] ?: CategoriaGasto::from($g['categoria'])->label(),
+                        'a_cargo_de_label' => ACargoDe::from($g['a_cargo_de'])->label(),
+                    ])->all(),
                 ]),
             'tipos' => Opciones::de(TipoGasto::class),
             'categorias' => Opciones::de(CategoriaGasto::class),

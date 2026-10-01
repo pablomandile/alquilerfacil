@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Plus, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -10,11 +11,19 @@ import rutasContratos from '@/routes/contratos';
 
 type Opcion = { value: string; label: string };
 
+type GastoContrato = {
+    categoria: string;
+    descripcion: string | null;
+    a_cargo_de: string;
+};
+
 const props = defineProps<{
     propiedades: Array<{ id: number; alias: string }>;
     inquilinos: Array<{ id: number; nombre: string }>;
     indices: Opcion[];
     estados: Opcion[];
+    categorias: Opcion[];
+    aCargoDe: Opcion[];
     opcionesRedondeo: Array<{ value: number; label: string }>;
     contrato?: {
         id: number;
@@ -32,6 +41,7 @@ const props = defineProps<{
         redondeo: number;
         estado: string;
         notas: string | null;
+        gastos: GastoContrato[];
     };
 }>();
 
@@ -58,7 +68,20 @@ const form = useForm({
     redondeo: props.contrato?.redondeo ?? 0,
     estado: props.contrato?.estado ?? 'activo',
     notas: props.contrato?.notas ?? '',
+    gastos: (props.contrato?.gastos ?? []).map((g) => ({ ...g })),
 });
+
+function agregarGasto() {
+    form.gastos.push({
+        categoria: 'luz',
+        descripcion: '',
+        a_cargo_de: 'inquilino',
+    });
+}
+
+function quitarGasto(indice: number) {
+    form.gastos.splice(indice, 1);
+}
 
 /* Al crear, sugerir la primera fecha de ajuste a partir del inicio y la
    frecuencia: es lo que uno haría a mano y evita dejarla vacía por olvido. */
@@ -288,6 +311,93 @@ function enviar() {
                         El alquiler siempre queda en pesos enteros; acá elegís
                         si además se redondea a un número más parejo.
                     </p>
+                </div>
+            </section>
+
+            <!-- Gastos que incluye el contrato: precompletan la carga de gastos -->
+            <section
+                class="tarjeta grid grid-cols-1 gap-4 rounded-xl border p-4"
+            >
+                <div>
+                    <h2 class="text-sm font-medium">Gastos del contrato</h2>
+                    <p class="text-muted-foreground text-xs">
+                        Qué servicios e impuestos incluye y quién paga cada uno.
+                        Al cargar un gasto de esta propiedad aparecen como
+                        opción ya elegida.
+                    </p>
+                </div>
+
+                <div
+                    v-for="(gasto, i) in form.gastos"
+                    :key="i"
+                    class="grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end sm:border-0 sm:p-0"
+                >
+                    <div class="grid min-w-0 gap-1.5">
+                        <Label :for="`gasto-categoria-${i}`">Categoría</Label>
+                        <select
+                            :id="`gasto-categoria-${i}`"
+                            v-model="gasto.categoria"
+                            class="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+                        >
+                            <option
+                                v-for="c in categorias"
+                                :key="c.value"
+                                :value="c.value"
+                            >
+                                {{ c.label }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="grid min-w-0 gap-1.5">
+                        <Label :for="`gasto-descripcion-${i}`">
+                            Descripción
+                        </Label>
+                        <Input
+                            :id="`gasto-descripcion-${i}`"
+                            v-model="gasto.descripcion"
+                            placeholder="Edenor, AySA…"
+                        />
+                    </div>
+                    <div class="grid min-w-0 gap-1.5">
+                        <Label :for="`gasto-acargo-${i}`">A cargo de</Label>
+                        <select
+                            :id="`gasto-acargo-${i}`"
+                            v-model="gasto.a_cargo_de"
+                            class="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+                        >
+                            <option
+                                v-for="a in aCargoDe"
+                                :key="a.value"
+                                :value="a.value"
+                            >
+                                {{ a.label }}
+                            </option>
+                        </select>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        class="justify-self-end"
+                        @click="quitarGasto(i)"
+                    >
+                        <Trash2 class="size-4" />
+                        <span class="sm:sr-only">Quitar</span>
+                    </Button>
+                </div>
+
+                <InputError :message="form.errors.gastos" />
+
+                <div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        @click="agregarGasto"
+                    >
+                        <Plus class="size-4" />
+                        Agregar gasto
+                    </Button>
                 </div>
             </section>
 

@@ -28,4 +28,16 @@ enum CategoriaGasto: string implements Etiquetable
             self::Otro => 'Otro',
         };
     }
+
+    /** El tipo con que se carga un gasto de esta categoría si no se elige otro. */
+    public function tipoPorDefecto(): TipoGasto
+    {
+        return match ($this) {
+            self::Luz, self::Agua, self::Gas, self::Internet => TipoGasto::Servicio,
+            self::Expensas => TipoGasto::Expensas,
+            self::Abl => TipoGasto::Impuesto,
+            self::Reparacion => TipoGasto::Extraordinario,
+            self::Seguro, self::Otro => TipoGasto::Otro,
+        };
+    }
 }
