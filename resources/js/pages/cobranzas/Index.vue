@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Plus, Trash2, Wallet } from '@lucide/vue';
+import { Check, Copy, MessageCircle, Plus, Trash2, Wallet } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import EstadoBadge from '@/components/EstadoBadge.vue';
+import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StatCard from '@/components/StatCard.vue';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { pesos, pesosRedondos } from '@/lib/formato';
 import rutasCobranzas from '@/routes/cobranzas';
 import rutasContratos from '@/routes/contratos';
+import rutasMensajeInquilino from '@/routes/mensaje-inquilino';
 import rutasPagos from '@/routes/pagos';
 
 type Pago = {
@@ -30,11 +32,19 @@ type Pago = {
     referencia: string | null;
 };
 
+type ItemMes = {
+    concepto: string;
+    monto: string;
+    vencimiento: string | null;
+};
+
 type Cargo = {
     id: number;
     propiedad: string;
     contrato_id: number;
+    property_id: number;
     inquilino: string;
+    telefono: string | null;
     monto: string;
     pagado: string;
     saldo: string;
@@ -42,6 +52,10 @@ type Cargo = {
     estado: string;
     estado_label: string;
     pagos: Pago[];
+    mes: string;
+    alquiler: ItemMes;
+    gastos: ItemMes[];
+    envio: { enviado: boolean; fecha: string | null };
 };
 
 const props = defineProps<{
@@ -114,6 +128,90 @@ function borrarPago(id: number) {
 function borrarCargo(id: number) {
     router.delete(rutasCobranzas.destroy(id).url, { preserveScroll: true });
 }
+
+/* Cuadro y mensaje del mes para el inquilino */
+function itemsDeCargo(cargo: Cargo): ItemMes[] {
+    return [cargo.alquiler, ...cargo.gastos];
+}
+
+function totalDeCargo(cargo: Cargo): number {
+    return itemsDeCargo(cargo).reduce((s, i) => s + Number(i.monto), 0);
+}
+
+function textoMensajeDeCargo(cargo: Cargo): string {
+    const nombre = cargo.inquilino.split(' ')[0];
+    const lineas = itemsDeCargo(cargo).map(
+        (i) =>
+            `• ${i.concepto} — ${pesos(i.monto)}` +
+            (i.vencimiento ? ` (vence ${i.vencimiento})` : ''),
+    );
+    return [
+        `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
+        '',
+        ...lineas,
+        '',
+        `Total: ${pesos(totalDeCargo(cargo))}`,
+        '',
+        'Saludos!',
+    ].join('\n');
+}
+
+function linkWhatsappDeCargo(cargo: Cargo): string {
+    const texto = encodeURIComponent(textoMensajeDeCargo(cargo));
+    const tel = (cargo.telefono ?? '').replace(/\D/g, '').replace(/^0/, '');
+    if (!tel) return `https://wa.me/?text=${texto}`;
+    return `https://wa.me/${tel.startsWith('54') ? tel : `54${tel}`}?text=${texto}`;
+}
+
+const copiadoId = ref<number | null>(null);
+
+function copiarMensaje(cargo: Cargo) {
+    navigator.clipboard.writeText(textoMensajeDeCargo(cargo));
+    copiadoId.value = cargo.id;
+    setTimeout(() => {
+        copiadoId.value = null;
+    }, 2000);
+}
+
+function marcarEnviado(cargo: Cargo) {
+    router.patch(
+        rutasMensajeInquilino.actualizar(cargo.property_id).url,
+        { estado: 'enviado' },
+        { preserveScroll: true },
+    );
+}
+
+const cargoVolviendoPendiente = ref<Cargo | null>(null);
+const formPendiente = useForm({ password: '' });
+
+function abrirVolverAPendiente(cargo: Cargo) {
+    formPendiente.reset();
+    formPendiente.clearErrors();
+    cargoVolviendoPendiente.value = cargo;
+}
+
+function confirmarPendiente() {
+    if (!cargoVolviendoPendiente.value) return;
+    formPendiente
+        .transform((d) => ({ ...d, estado: 'pendiente' }))
+        .patch(
+            rutasMensajeInquilino.actualizar(
+                cargoVolviendoPendiente.value.property_id,
+            ).url,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    cargoVolviendoPendiente.value = null;
+                    formPendiente.reset();
+                },
+            },
+        );
+}
+
+function alTocarEstado(cargo: Cargo) {
+    if (cargo.envio.enviado) abrirVolverAPendiente(cargo);
+    else marcarEnviado(cargo);
+}
 </script>
 
 <template>
@@ -172,11 +270,11 @@ function borrarCargo(id: number) {
             </Button>
         </EmptyState>
 
-        <div v-else class="grid gap-3">
+        <div v-else class="grid grid-cols-1 gap-3">
             <article
                 v-for="cargo in cargos"
                 :key="cargo.id"
-                class="tarjeta rounded-xl border p-4"
+                class="tarjeta min-w-0 rounded-xl border p-4"
             >
                 <div
                     class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
@@ -266,6 +364,125 @@ function borrarCargo(id: number) {
                         </div>
                     </li>
                 </ul>
+
+                <!-- Cuadro alquiler + gastos del mes para el inquilino -->
+                <div class="mt-3 overflow-hidden rounded-xl border">
+                    <!-- En el celular el vencimiento va abajo del concepto:
+                         tres columnas no entran. -->
+                    <table class="w-full text-sm">
+                        <tbody class="divide-y">
+                            <tr
+                                v-for="(item, i) in itemsDeCargo(cargo)"
+                                :key="i"
+                            >
+                                <td class="px-3 py-2 sm:px-4">
+                                    {{ item.concepto }}
+                                    <span
+                                        v-if="item.vencimiento"
+                                        class="text-muted-foreground block text-xs sm:hidden"
+                                    >
+                                        vence {{ item.vencimiento }}
+                                    </span>
+                                </td>
+                                <td
+                                    class="text-muted-foreground hidden px-4 py-2 whitespace-nowrap sm:table-cell"
+                                >
+                                    <span v-if="item.vencimiento">
+                                        vence {{ item.vencimiento }}
+                                    </span>
+                                </td>
+                                <td
+                                    class="px-3 py-2 text-right whitespace-nowrap tabular-nums sm:px-4"
+                                >
+                                    {{ pesos(item.monto) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="border-t">
+                            <tr class="font-semibold">
+                                <td class="px-3 py-2 sm:hidden">Total</td>
+                                <td
+                                    class="hidden px-4 py-2 sm:table-cell"
+                                    colspan="2"
+                                >
+                                    Total
+                                </td>
+                                <td
+                                    class="px-3 py-2 text-right whitespace-nowrap tabular-nums sm:px-4"
+                                >
+                                    {{ pesos(totalDeCargo(cargo)) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div
+                        class="bg-muted/40 flex flex-wrap items-center gap-2 border-t p-3"
+                    >
+                        <Button size="sm" @click="copiarMensaje(cargo)">
+                            <Check
+                                v-if="copiadoId === cargo.id"
+                                class="size-4"
+                            />
+                            <Copy v-else class="size-4" />
+                            {{
+                                copiadoId === cargo.id
+                                    ? 'Copiado'
+                                    : 'Copiar mensaje'
+                            }}
+                        </Button>
+                        <Button as-child size="sm" variant="outline">
+                            <a
+                                :href="linkWhatsappDeCargo(cargo)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <MessageCircle class="size-4" />
+                                WhatsApp
+                            </a>
+                        </Button>
+
+                        <button
+                            type="button"
+                            class="ml-auto inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium first-letter:uppercase"
+                            :class="
+                                cargo.envio.enviado
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900'
+                                    : 'bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-900'
+                            "
+                            :title="`Aviso de ${cargo.mes}`"
+                            @click="alTocarEstado(cargo)"
+                        >
+                            <span
+                                class="size-1.5 rounded-full"
+                                :class="
+                                    cargo.envio.enviado
+                                        ? 'bg-emerald-500'
+                                        : 'bg-amber-500'
+                                "
+                            />
+                            {{ cargo.mes }} ·
+                            {{
+                                cargo.envio.enviado
+                                    ? cargo.envio.fecha
+                                        ? `Enviado ${cargo.envio.fecha}`
+                                        : 'Enviado'
+                                    : 'Pendiente'
+                            }}
+                        </button>
+                    </div>
+
+                    <details class="border-t px-4 py-3 text-sm">
+                        <summary
+                            class="text-muted-foreground cursor-pointer select-none"
+                        >
+                            Ver el mensaje
+                        </summary>
+                        <pre
+                            class="mt-2 font-sans text-sm whitespace-pre-wrap"
+                            >{{ textoMensajeDeCargo(cargo) }}</pre>
+                    </details>
+                </div>
             </article>
         </div>
     </div>
@@ -346,6 +563,52 @@ function borrarCargo(id: number) {
                     Registrar
                 </Button>
             </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog
+        :open="cargoVolviendoPendiente !== null"
+        @update:open="(v) => !v && (cargoVolviendoPendiente = null)"
+    >
+        <DialogContent class="sm:max-w-sm">
+            <DialogHeader>
+                <DialogTitle>Volver el aviso a pendiente</DialogTitle>
+                <DialogDescription>
+                    Ingresá tu contraseña para confirmar. Es para no desmarcar
+                    por error un aviso que ya mandaste.
+                </DialogDescription>
+            </DialogHeader>
+
+            <form class="grid gap-3" @submit.prevent="confirmarPendiente">
+                <div class="grid gap-1.5">
+                    <Label for="pw-pendiente">Contraseña</Label>
+                    <Input
+                        id="pw-pendiente"
+                        v-model="formPendiente.password"
+                        type="password"
+                        autocomplete="current-password"
+                    />
+                    <InputError :message="formPendiente.errors.password" />
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="cargoVolviendoPendiente = null"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="submit"
+                        :disabled="
+                            formPendiente.processing || !formPendiente.password
+                        "
+                    >
+                        Confirmar
+                    </Button>
+                </DialogFooter>
+            </form>
         </DialogContent>
     </Dialog>
 </template>

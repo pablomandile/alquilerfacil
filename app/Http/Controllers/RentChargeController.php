@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ACargoDe;
 use App\Enums\MedioPago;
+use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\RentCharge;
+use App\Models\TenantMessage;
 use App\Services\Cobranzas\GeneradorDeCargos;
 use App\Support\Decimal;
 use App\Support\Opciones;
@@ -26,16 +29,38 @@ class RentChargeController extends Controller
             ? Date::parse($datos['periodo'].'-01')
             : today()->startOfMonth();
 
-        $cargos = RentCharge::query()
+        $rawCargos = RentCharge::query()
             ->visiblePara($request->user())
             ->delPeriodo($periodo)
-            ->with(['contract.property:id,alias', 'contract.tenant:id,nombre', 'payments'])
+            ->with(['contract.property:id,alias', 'contract.tenant:id,nombre,telefono', 'payments'])
+            ->get();
+
+        $propertyIds = $rawCargos->pluck('contract.property_id')->unique()->values();
+
+        $gastosPorPropiedad = Expense::query()
+            ->whereIn('property_id', $propertyIds)
+            ->whereIn('a_cargo_de', [ACargoDe::Inquilino, ACargoDe::Mitades])
+            ->whereNotNull('vencimiento')
+            ->whereMonth('vencimiento', $periodo->month)
+            ->whereYear('vencimiento', $periodo->year)
+            ->orderBy('vencimiento')
             ->get()
+            ->groupBy('property_id');
+
+        $enviosPorPropiedad = TenantMessage::query()
+            ->whereIn('property_id', $propertyIds)
+            ->delPeriodo($periodo)
+            ->get()
+            ->keyBy('property_id');
+
+        $cargos = $rawCargos
             ->map(fn (RentCharge $c) => [
                 'id' => $c->id,
                 'propiedad' => $c->contract->property->alias,
                 'contrato_id' => $c->contract_id,
+                'property_id' => $c->contract->property_id,
                 'inquilino' => $c->contract->tenant->nombre,
+                'telefono' => $c->contract->tenant->telefono,
                 'monto' => $c->monto,
                 'pagado' => $c->totalPagado(),
                 'saldo' => $c->saldo(),
@@ -49,6 +74,24 @@ class RentChargeController extends Controller
                     'medio' => $p->medio->label(),
                     'referencia' => $p->referencia,
                 ])->all(),
+                'mes' => $periodo->translatedFormat('F \d\e Y'),
+                'alquiler' => [
+                    'concepto' => 'Alquiler '.$periodo->translatedFormat('F'),
+                    'monto' => $c->monto,
+                    'vencimiento' => $c->vencimiento->format('d/m/Y'),
+                ],
+                'gastos' => ($gastosPorPropiedad->get($c->contract->property_id) ?? collect())
+                    ->map(fn (Expense $g) => [
+                        'concepto' => $g->a_cargo_de === ACargoDe::Mitades
+                            ? ($g->descripcion ?: $g->categoria->label()).' (mitad)'
+                            : ($g->descripcion ?: $g->categoria->label()),
+                        'monto' => $g->montoDelInquilino(),
+                        'vencimiento' => $g->vencimiento?->format('d/m/Y'),
+                    ])->values()->all(),
+                'envio' => [
+                    'enviado' => $enviosPorPropiedad->has($c->contract->property_id),
+                    'fecha' => $enviosPorPropiedad->get($c->contract->property_id)?->enviado_at->format('d/m/Y'),
+                ],
             ])
             ->sortBy('propiedad')
             ->values()

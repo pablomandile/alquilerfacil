@@ -242,6 +242,8 @@ const textoMensaje = computed(() => {
         ...lineas,
         '',
         `Total: ${pesos(totalDelMes.value)}`,
+        '',
+        'Saludos!',
     ].join('\n');
 });
 
@@ -589,16 +591,24 @@ function alTocarEstado() {
                 <table class="w-full text-sm">
                     <tbody class="divide-y">
                         <tr v-for="(item, i) in itemsDelMes" :key="i">
-                            <td class="px-4 py-2">{{ item.concepto }}</td>
+                            <td class="px-3 py-2 sm:px-4">
+                                {{ item.concepto }}
+                                <span
+                                    v-if="item.vencimiento"
+                                    class="text-muted-foreground block text-xs sm:hidden"
+                                >
+                                    vence {{ item.vencimiento }}
+                                </span>
+                            </td>
                             <td
-                                class="text-muted-foreground px-4 py-2 whitespace-nowrap"
+                                class="text-muted-foreground hidden px-4 py-2 whitespace-nowrap sm:table-cell"
                             >
                                 <span v-if="item.vencimiento">
                                     vence {{ item.vencimiento }}
                                 </span>
                             </td>
                             <td
-                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
+                                class="px-3 py-2 text-right whitespace-nowrap tabular-nums sm:px-4"
                             >
                                 {{ pesos(item.monto) }}
                             </td>
@@ -606,9 +616,15 @@ function alTocarEstado() {
                     </tbody>
                     <tfoot class="border-t">
                         <tr class="font-semibold">
-                            <td class="px-4 py-2" colspan="2">Total</td>
+                            <td class="px-3 py-2 sm:hidden">Total</td>
                             <td
-                                class="px-4 py-2 text-right whitespace-nowrap tabular-nums"
+                                class="hidden px-4 py-2 sm:table-cell"
+                                colspan="2"
+                            >
+                                Total
+                            </td>
+                            <td
+                                class="px-3 py-2 text-right whitespace-nowrap tabular-nums sm:px-4"
                             >
                                 {{ pesos(totalDelMes) }}
                             </td>
