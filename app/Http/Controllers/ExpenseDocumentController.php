@@ -19,6 +19,12 @@ class ExpenseDocumentController extends Controller
         return $this->entregarArchivo($request, $document->path, $document->nombre_original);
     }
 
+    /** Entrada por enlace firmado (el de WhatsApp): la firma reemplaza al login. */
+    public function compartido(Request $request, ExpenseDocument $document): StreamedResponse
+    {
+        return $this->entregarArchivo($request, $document->path, $document->nombre_original);
+    }
+
     public function destroy(ExpenseDocument $document): RedirectResponse
     {
         $this->authorize('delete', $document);

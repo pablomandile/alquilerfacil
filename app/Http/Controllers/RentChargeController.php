@@ -44,6 +44,7 @@ class RentChargeController extends Controller
             ->whereMonth('vencimiento', $periodo->month)
             ->whereYear('vencimiento', $periodo->year)
             ->orderBy('vencimiento')
+            ->with('documents')
             ->get()
             ->groupBy('property_id');
 
@@ -81,13 +82,7 @@ class RentChargeController extends Controller
                     'vencimiento' => $c->vencimiento->format('d/m/Y'),
                 ],
                 'gastos' => ($gastosPorPropiedad->get($c->contract->property_id) ?? collect())
-                    ->map(fn (Expense $g) => [
-                        'concepto' => $g->a_cargo_de === ACargoDe::Mitades
-                            ? ($g->descripcion ?: $g->categoria->label()).' (mitad)'
-                            : ($g->descripcion ?: $g->categoria->label()),
-                        'monto' => $g->montoDelInquilino(),
-                        'vencimiento' => $g->vencimiento?->format('d/m/Y'),
-                    ])->values()->all(),
+                    ->map(fn (Expense $g) => $g->paraElInquilino())->values()->all(),
                 'envio' => [
                     'enviado' => $enviosPorPropiedad->has($c->contract->property_id),
                     'fecha' => $enviosPorPropiedad->get($c->contract->property_id)?->enviado_at->format('d/m/Y'),

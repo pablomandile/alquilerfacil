@@ -140,6 +140,7 @@ const props = defineProps<{
             concepto: string;
             monto: string;
             vencimiento: string | null;
+            adjuntos: Array<{ nombre: string; url: string }>;
         }>;
         envio: { enviado: boolean; fecha: string | null };
     } | null;
@@ -212,6 +213,7 @@ type ItemMes = {
     concepto: string;
     monto: string;
     vencimiento: string | null;
+    adjuntos?: Array<{ nombre: string; url: string }>;
 };
 
 const itemsDelMes = computed<ItemMes[]>(() =>
@@ -236,12 +238,21 @@ const textoMensaje = computed(() => {
             (i.vencimiento ? ` (vence ${i.vencimiento})` : ''),
     );
 
+    const adjuntos = itemsDelMes.value.flatMap((i) => i.adjuntos ?? []);
+
     return [
         `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
         '',
         ...lineas,
         '',
         `Total: ${pesos(totalDelMes.value)}`,
+        ...(adjuntos.length
+            ? [
+                  '',
+                  'Facturas y comprobantes:',
+                  ...adjuntos.map((a) => `• ${a.nombre}: ${a.url}`),
+              ]
+            : []),
         '',
         'Saludos!',
     ].join('\n');

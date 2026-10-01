@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 /**
  * Un archivo adjunto a un gasto: la factura o la expensa del período, o el
@@ -55,6 +56,16 @@ class ExpenseDocument extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'subido_por');
+    }
+
+    /** Enlace firmado y con vencimiento, para pasárselo al inquilino sin que inicie sesión. */
+    public function enlaceCompartido(): string
+    {
+        return URL::temporarySignedRoute(
+            'gastos.documentos.compartido',
+            now()->addDays(30),
+            ['document' => $this->id],
+        );
     }
 
     /** Borra el archivo del disco y después la fila. */

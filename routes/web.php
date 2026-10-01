@@ -38,6 +38,13 @@ Route::controller(GoogleController::class)->group(function () {
     Route::get('auth/google/callback', 'callback')->name('google.callback');
 });
 
+/*
+ * Facturas y comprobantes que se le pasan al inquilino por WhatsApp. Sin login:
+ * los protege la firma del enlace, que además vence.
+ */
+Route::get('compartido/gastos/{document}', [ExpenseDocumentController::class, 'compartido'])
+    ->whereNumber('document')->middleware(['signed', 'throttle:60,1'])->name('gastos.documentos.compartido');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 

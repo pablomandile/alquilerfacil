@@ -293,14 +293,9 @@ class PropertyController extends Controller
             ->whereMonth('vencimiento', $mes->month)
             ->whereYear('vencimiento', $mes->year)
             ->orderBy('vencimiento')
+            ->with('documents')
             ->get()
-            ->map(fn (Expense $g) => [
-                'concepto' => $g->a_cargo_de === ACargoDe::Mitades
-                    ? ($g->descripcion ?: $g->categoria->label()).' (mitad)'
-                    : ($g->descripcion ?: $g->categoria->label()),
-                'monto' => $g->montoDelInquilino(),
-                'vencimiento' => $g->vencimiento?->format('d/m/Y'),
-            ]);
+            ->map(fn (Expense $g) => $g->paraElInquilino());
 
         // ¿Ya se le mandó el aviso de este mes?
         $envio = TenantMessage::query()

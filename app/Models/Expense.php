@@ -80,6 +80,27 @@ class Expense extends Model implements Repartible
         return $this->belongsTo(Contract::class);
     }
 
+    /**
+     * Cómo figura este gasto en el aviso al inquilino: su parte, y las facturas y
+     * comprobantes como enlaces (WhatsApp no deja adjuntar archivos desde un link).
+     *
+     * @return array{concepto: string, monto: string, vencimiento: string|null, adjuntos: list<array{nombre: string, url: string}>}
+     */
+    public function paraElInquilino(): array
+    {
+        $concepto = $this->descripcion ?: $this->categoria->label();
+
+        return [
+            'concepto' => $this->a_cargo_de === ACargoDe::Mitades ? $concepto.' (mitad)' : $concepto,
+            'monto' => $this->montoDelInquilino(),
+            'vencimiento' => $this->vencimiento?->format('d/m/Y'),
+            'adjuntos' => array_values($this->documents->map(fn (ExpenseDocument $d) => [
+                'nombre' => $concepto.' — '.mb_strtolower($d->tipo->label()),
+                'url' => $d->enlaceCompartido(),
+            ])->all()),
+        ];
+    }
+
     /** @return HasMany<ExpenseDocument, $this> */
     public function documents(): HasMany
     {

@@ -36,6 +36,7 @@ type ItemMes = {
     concepto: string;
     monto: string;
     vencimiento: string | null;
+    adjuntos?: Array<{ nombre: string; url: string }>;
 };
 
 type Cargo = {
@@ -145,12 +146,20 @@ function textoMensajeDeCargo(cargo: Cargo): string {
             `• ${i.concepto} — ${pesos(i.monto)}` +
             (i.vencimiento ? ` (vence ${i.vencimiento})` : ''),
     );
+    const adjuntos = itemsDeCargo(cargo).flatMap((i) => i.adjuntos ?? []);
     return [
         `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
         '',
         ...lineas,
         '',
         `Total: ${pesos(totalDeCargo(cargo))}`,
+        ...(adjuntos.length
+            ? [
+                  '',
+                  'Facturas y comprobantes:',
+                  ...adjuntos.map((a) => `• ${a.nombre}: ${a.url}`),
+              ]
+            : []),
         '',
         'Saludos!',
     ].join('\n');
