@@ -159,6 +159,9 @@
 }
 
 .dark {
+    /* Sin esto el navegador dibuja los controles nativos (el icono de
+       calendario del input de mes, scrollbars) en claro: negro sobre oscuro. */
+    color-scheme: dark;
     --background: hsl(216 40% 7%);
     --foreground: hsl(210 20% 96%);
     --card: hsl(216 40% 11%);
