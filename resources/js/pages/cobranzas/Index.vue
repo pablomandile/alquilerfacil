@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm, usePage } from "@inertiajs/vue3";
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
     Check,
     Copy,
@@ -8,17 +8,17 @@ import {
     Plus,
     Trash2,
     Wallet,
-} from "@lucide/vue";
-import { computed, ref } from "vue";
-import EmptyState from "@/components/EmptyState.vue";
-import EstadoBadge from "@/components/EstadoBadge.vue";
-import InputError from "@/components/InputError.vue";
-import PageHeader from "@/components/PageHeader.vue";
-import StatCard from "@/components/StatCard.vue";
+} from '@lucide/vue';
+import { computed, ref } from 'vue';
+import EmptyState from '@/components/EmptyState.vue';
+import EstadoBadge from '@/components/EstadoBadge.vue';
+import InputError from '@/components/InputError.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import StatCard from '@/components/StatCard.vue';
 import VisorArchivo, {
     type ArchivoVisible,
-} from "@/components/VisorArchivo.vue";
-import { Button } from "@/components/ui/button";
+} from '@/components/VisorArchivo.vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -26,14 +26,14 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { pesos, pesosRedondos } from "@/lib/formato";
-import rutasCobranzas from "@/routes/cobranzas";
-import rutasContratos from "@/routes/contratos";
-import rutasMensajeInquilino from "@/routes/mensaje-inquilino";
-import rutasPagos from "@/routes/pagos";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { pesos, pesosRedondos } from '@/lib/formato';
+import rutasCobranzas from '@/routes/cobranzas';
+import rutasContratos from '@/routes/contratos';
+import rutasMensajeInquilino from '@/routes/mensaje-inquilino';
+import rutasPagos from '@/routes/pagos';
 
 type Pago = {
     id: number;
@@ -81,7 +81,7 @@ const props = defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: "Cobranzas", href: rutasCobranzas.index() }],
+        breadcrumbs: [{ title: 'Cobranzas', href: rutasCobranzas.index() }],
     },
 });
 
@@ -111,9 +111,9 @@ function generarCargos() {
 const cobrando = ref<Cargo | null>(null);
 const formPago = useForm({
     fecha: new Date().toISOString().slice(0, 10),
-    monto: "",
-    medio: "transferencia",
-    referencia: "",
+    monto: '',
+    medio: 'transferencia',
+    referencia: '',
     comprobante: null as File | null,
 });
 
@@ -179,34 +179,34 @@ function totalDeCargo(cargo: Cargo): number {
 }
 
 function textoMensajeDeCargo(cargo: Cargo): string {
-    const nombre = cargo.inquilino.split(" ")[0];
+    const nombre = cargo.inquilino.split(' ')[0];
     const lineas = itemsDeCargo(cargo).map(
         (i) => `• ${i.concepto} — ${pesos(i.monto)}`,
     );
     const adjuntos = itemsDeCargo(cargo).flatMap((i) => i.adjuntos ?? []);
     return [
         `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
-        "",
+        '',
         ...lineas,
-        "",
+        '',
         `Total: ${pesos(totalDeCargo(cargo))}`,
         ...(adjuntos.length
             ? [
-                  "",
-                  "Facturas y comprobantes:",
+                  '',
+                  'Facturas y comprobantes:',
                   ...adjuntos.map((a) => `• ${a.nombre}: ${a.url}`),
               ]
             : []),
-        "",
-        "Saludos!",
-    ].join("\n");
+        '',
+        'Saludos!',
+    ].join('\n');
 }
 
 function linkWhatsappDeCargo(cargo: Cargo): string {
     const texto = encodeURIComponent(textoMensajeDeCargo(cargo));
-    const tel = (cargo.telefono ?? "").replace(/\D/g, "").replace(/^0/, "");
+    const tel = (cargo.telefono ?? '').replace(/\D/g, '').replace(/^0/, '');
     if (!tel) return `https://wa.me/?text=${texto}`;
-    return `https://wa.me/${tel.startsWith("54") ? tel : `54${tel}`}?text=${texto}`;
+    return `https://wa.me/${tel.startsWith('54') ? tel : `54${tel}`}?text=${texto}`;
 }
 
 const copiadoId = ref<number | null>(null);
@@ -222,13 +222,13 @@ function copiarMensaje(cargo: Cargo) {
 function marcarEnviado(cargo: Cargo) {
     router.patch(
         rutasMensajeInquilino.actualizar(cargo.property_id).url,
-        { estado: "enviado" },
+        { estado: 'enviado' },
         { preserveScroll: true },
     );
 }
 
 const cargoVolviendoPendiente = ref<Cargo | null>(null);
-const formPendiente = useForm({ password: "" });
+const formPendiente = useForm({ password: '' });
 
 function abrirVolverAPendiente(cargo: Cargo) {
     formPendiente.reset();
@@ -239,7 +239,7 @@ function abrirVolverAPendiente(cargo: Cargo) {
 function confirmarPendiente() {
     if (!cargoVolviendoPendiente.value) return;
     formPendiente
-        .transform((d) => ({ ...d, estado: "pendiente" }))
+        .transform((d) => ({ ...d, estado: 'pendiente' }))
         .patch(
             rutasMensajeInquilino.actualizar(
                 cargoVolviendoPendiente.value.property_id,
@@ -484,8 +484,8 @@ function alTocarEstado(cargo: Cargo) {
                             <Copy v-else class="size-4" />
                             {{
                                 copiadoId === cargo.id
-                                    ? "Copiado"
-                                    : "Copiar mensaje"
+                                    ? 'Copiado'
+                                    : 'Copiar mensaje'
                             }}
                         </Button>
                         <Button as-child size="sm" variant="outline">
@@ -523,8 +523,8 @@ function alTocarEstado(cargo: Cargo) {
                                 cargo.envio.enviado
                                     ? cargo.envio.fecha
                                         ? `Enviado ${cargo.envio.fecha}`
-                                        : "Enviado"
-                                    : "Pendiente"
+                                        : 'Enviado'
+                                    : 'Pendiente'
                             }}
                         </button>
                     </div>
