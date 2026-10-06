@@ -74,6 +74,9 @@ class RentChargeController extends Controller
                     'monto' => $p->monto,
                     'medio' => $p->medio->label(),
                     'referencia' => $p->referencia,
+                    'comprobante' => $p->comprobante_path !== null
+                        ? ['nombre' => $p->comprobante_nombre, 'mime' => $p->comprobante_mime]
+                        : null,
                 ])->all(),
                 'mes' => $periodo->translatedFormat('F \d\e Y'),
                 'alquiler' => [

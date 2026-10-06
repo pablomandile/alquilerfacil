@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Un pago del inquilino contra un cargo de alquiler. Puede haber varios por
@@ -21,9 +22,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property numeric-string $monto
  * @property MedioPago $medio
  * @property string|null $referencia
+ * @property string|null $comprobante_path
+ * @property string|null $comprobante_nombre
+ * @property string|null $comprobante_mime
  * @property-read RentCharge $rentCharge
  */
-#[Fillable(['rent_charge_id', 'fecha', 'monto', 'medio', 'referencia', 'notas'])]
+#[Fillable(['rent_charge_id', 'fecha', 'monto', 'medio', 'referencia', 'notas', 'comprobante_path', 'comprobante_nombre', 'comprobante_mime'])]
 class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */
@@ -51,6 +55,13 @@ class Payment extends Model
 
         static::saved($sincronizar);
         static::deleted($sincronizar);
+
+        // El comprobante no sobrevive al pago.
+        static::deleted(function (Payment $payment): void {
+            if ($payment->comprobante_path !== null) {
+                Storage::disk('local')->delete($payment->comprobante_path);
+            }
+        });
     }
 
     /** @return BelongsTo<RentCharge, $this> */

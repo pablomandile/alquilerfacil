@@ -14,6 +14,12 @@ class PaymentPolicy
         return $user->puedeGestionar($charge->contract->property);
     }
 
+    /** Ver el comprobante del pago. */
+    public function view(User $user, Payment $payment): bool
+    {
+        return $user->puedeGestionar($payment->rentCharge->contract->property);
+    }
+
     public function delete(User $user, Payment $payment): bool
     {
         return $user->puedeGestionar($payment->rentCharge->contract->property);

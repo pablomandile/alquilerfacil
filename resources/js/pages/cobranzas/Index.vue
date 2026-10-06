@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Check, Copy, MessageCircle, Plus, Trash2, Wallet } from '@lucide/vue';
-import { computed, ref } from 'vue';
-import EmptyState from '@/components/EmptyState.vue';
-import EstadoBadge from '@/components/EstadoBadge.vue';
-import InputError from '@/components/InputError.vue';
-import PageHeader from '@/components/PageHeader.vue';
-import StatCard from '@/components/StatCard.vue';
-import { Button } from '@/components/ui/button';
+import { Head, Link, router, useForm, usePage } from "@inertiajs/vue3";
+import {
+    Check,
+    Copy,
+    MessageCircle,
+    Paperclip,
+    Plus,
+    Trash2,
+    Wallet,
+} from "@lucide/vue";
+import { computed, ref } from "vue";
+import EmptyState from "@/components/EmptyState.vue";
+import EstadoBadge from "@/components/EstadoBadge.vue";
+import InputError from "@/components/InputError.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import StatCard from "@/components/StatCard.vue";
+import VisorArchivo, {
+    type ArchivoVisible,
+} from "@/components/VisorArchivo.vue";
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -15,14 +26,14 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { pesos, pesosRedondos } from '@/lib/formato';
-import rutasCobranzas from '@/routes/cobranzas';
-import rutasContratos from '@/routes/contratos';
-import rutasMensajeInquilino from '@/routes/mensaje-inquilino';
-import rutasPagos from '@/routes/pagos';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { pesos, pesosRedondos } from "@/lib/formato";
+import rutasCobranzas from "@/routes/cobranzas";
+import rutasContratos from "@/routes/contratos";
+import rutasMensajeInquilino from "@/routes/mensaje-inquilino";
+import rutasPagos from "@/routes/pagos";
 
 type Pago = {
     id: number;
@@ -30,6 +41,7 @@ type Pago = {
     monto: string;
     medio: string;
     referencia: string | null;
+    comprobante: { nombre: string; mime: string } | null;
 };
 
 type ItemMes = {
@@ -69,7 +81,7 @@ const props = defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Cobranzas', href: rutasCobranzas.index() }],
+        breadcrumbs: [{ title: "Cobranzas", href: rutasCobranzas.index() }],
     },
 });
 
@@ -99,15 +111,27 @@ function generarCargos() {
 const cobrando = ref<Cargo | null>(null);
 const formPago = useForm({
     fecha: new Date().toISOString().slice(0, 10),
-    monto: '',
-    medio: 'transferencia',
-    referencia: '',
+    monto: "",
+    medio: "transferencia",
+    referencia: "",
+    comprobante: null as File | null,
 });
+
+/* El input de archivo no se resetea con el form: se remonta con esta key. */
+const inputComprobanteKey = ref(0);
+
+function elegirComprobante(evento: Event) {
+    formPago.comprobante =
+        (evento.target as HTMLInputElement).files?.[0] ?? null;
+}
 
 function abrirCobro(cargo: Cargo) {
     cobrando.value = cargo;
     formPago.monto = cargo.saldo;
     formPago.fecha = new Date().toISOString().slice(0, 10);
+    formPago.comprobante = null;
+    formPago.clearErrors();
+    inputComprobanteKey.value++;
 }
 
 function registrarPago() {
@@ -120,6 +144,21 @@ function registrarPago() {
             formPago.reset();
         },
     });
+}
+
+const visor = ref<ArchivoVisible | null>(null);
+
+function verComprobante(pago: Pago) {
+    if (!pago.comprobante) return;
+
+    visor.value = {
+        nombre: pago.comprobante.nombre,
+        mime: pago.comprobante.mime,
+        verUrl: rutasPagos.comprobante(pago.id).url,
+        descargarUrl: rutasPagos.comprobante(pago.id, {
+            query: { descarga: 1 },
+        }).url,
+    };
 }
 
 function borrarPago(id: number) {
@@ -140,34 +179,34 @@ function totalDeCargo(cargo: Cargo): number {
 }
 
 function textoMensajeDeCargo(cargo: Cargo): string {
-    const nombre = cargo.inquilino.split(' ')[0];
+    const nombre = cargo.inquilino.split(" ")[0];
     const lineas = itemsDeCargo(cargo).map(
         (i) => `• ${i.concepto} — ${pesos(i.monto)}`,
     );
     const adjuntos = itemsDeCargo(cargo).flatMap((i) => i.adjuntos ?? []);
     return [
         `Hola ${nombre}, te paso el alquiler y los gastos de este mes:`,
-        '',
+        "",
         ...lineas,
-        '',
+        "",
         `Total: ${pesos(totalDeCargo(cargo))}`,
         ...(adjuntos.length
             ? [
-                  '',
-                  'Facturas y comprobantes:',
+                  "",
+                  "Facturas y comprobantes:",
                   ...adjuntos.map((a) => `• ${a.nombre}: ${a.url}`),
               ]
             : []),
-        '',
-        'Saludos!',
-    ].join('\n');
+        "",
+        "Saludos!",
+    ].join("\n");
 }
 
 function linkWhatsappDeCargo(cargo: Cargo): string {
     const texto = encodeURIComponent(textoMensajeDeCargo(cargo));
-    const tel = (cargo.telefono ?? '').replace(/\D/g, '').replace(/^0/, '');
+    const tel = (cargo.telefono ?? "").replace(/\D/g, "").replace(/^0/, "");
     if (!tel) return `https://wa.me/?text=${texto}`;
-    return `https://wa.me/${tel.startsWith('54') ? tel : `54${tel}`}?text=${texto}`;
+    return `https://wa.me/${tel.startsWith("54") ? tel : `54${tel}`}?text=${texto}`;
 }
 
 const copiadoId = ref<number | null>(null);
@@ -183,13 +222,13 @@ function copiarMensaje(cargo: Cargo) {
 function marcarEnviado(cargo: Cargo) {
     router.patch(
         rutasMensajeInquilino.actualizar(cargo.property_id).url,
-        { estado: 'enviado' },
+        { estado: "enviado" },
         { preserveScroll: true },
     );
 }
 
 const cargoVolviendoPendiente = ref<Cargo | null>(null);
-const formPendiente = useForm({ password: '' });
+const formPendiente = useForm({ password: "" });
 
 function abrirVolverAPendiente(cargo: Cargo) {
     formPendiente.reset();
@@ -200,7 +239,7 @@ function abrirVolverAPendiente(cargo: Cargo) {
 function confirmarPendiente() {
     if (!cargoVolviendoPendiente.value) return;
     formPendiente
-        .transform((d) => ({ ...d, estado: 'pendiente' }))
+        .transform((d) => ({ ...d, estado: "pendiente" }))
         .patch(
             rutasMensajeInquilino.actualizar(
                 cargoVolviendoPendiente.value.property_id,
@@ -359,6 +398,17 @@ function alTocarEstado(cargo: Cargo) {
                                 {{ pesos(pago.monto) }}
                             </span>
                             <Button
+                                v-if="pago.comprobante"
+                                size="icon"
+                                variant="ghost"
+                                class="size-7"
+                                :title="pago.comprobante.nombre"
+                                @click="verComprobante(pago)"
+                            >
+                                <Paperclip class="size-3.5" />
+                                <span class="sr-only">Ver comprobante</span>
+                            </Button>
+                            <Button
                                 v-if="puedeGestionar"
                                 size="icon"
                                 variant="ghost"
@@ -434,8 +484,8 @@ function alTocarEstado(cargo: Cargo) {
                             <Copy v-else class="size-4" />
                             {{
                                 copiadoId === cargo.id
-                                    ? 'Copiado'
-                                    : 'Copiar mensaje'
+                                    ? "Copiado"
+                                    : "Copiar mensaje"
                             }}
                         </Button>
                         <Button as-child size="sm" variant="outline">
@@ -473,8 +523,8 @@ function alTocarEstado(cargo: Cargo) {
                                 cargo.envio.enviado
                                     ? cargo.envio.fecha
                                         ? `Enviado ${cargo.envio.fecha}`
-                                        : 'Enviado'
-                                    : 'Pendiente'
+                                        : "Enviado"
+                                    : "Pendiente"
                             }}
                         </button>
                     </div>
@@ -556,6 +606,19 @@ function alTocarEstado(cargo: Cargo) {
                     />
                 </div>
 
+                <div class="grid min-w-0 gap-2">
+                    <Label for="comprobante">Comprobante (opcional)</Label>
+                    <input
+                        id="comprobante"
+                        :key="inputComprobanteKey"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                        class="file:bg-secondary w-full text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                        @change="elegirComprobante"
+                    />
+                    <InputError :message="formPago.errors.comprobante" />
+                </div>
+
                 <p class="text-muted-foreground text-xs">
                     Si el monto es menor al saldo, el cargo queda como pago
                     parcial.
@@ -618,4 +681,6 @@ function alTocarEstado(cargo: Cargo) {
             </form>
         </DialogContent>
     </Dialog>
+
+    <VisorArchivo v-model:archivo="visor" />
 </template>

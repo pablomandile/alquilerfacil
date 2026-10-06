@@ -159,6 +159,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('pagos.store');
     Route::delete('pagos/{payment}', [PaymentController::class, 'destroy'])
         ->name('pagos.destroy');
+    Route::get('pagos/{payment}/comprobante', [PaymentController::class, 'comprobante'])
+        ->whereNumber('payment')->name('pagos.comprobante');
 
     /*
     |----------------------------------------------------------------------
