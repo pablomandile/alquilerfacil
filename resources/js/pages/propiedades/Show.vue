@@ -140,6 +140,7 @@ const props = defineProps<{
             concepto: string;
             monto: string;
             vencimiento: string | null;
+            pagado: boolean;
             adjuntos: Array<{ nombre: string; url: string }>;
         }>;
         envio: { enviado: boolean; fecha: string | null };
@@ -208,11 +209,13 @@ function verDocumento(d: { id: number; nombre: string; mime: string }) {
 }
 
 /* Cuadro y mensaje del mes para el inquilino: el alquiler más los gastos a su
-   cargo. Es siempre el mismo mensaje, no depende de si algo está pago. */
+   cargo. El mensaje es siempre el mismo (importe y enlaces a factura y
+   comprobante); el cuadro sólo marca los gastos que ya están pagos. */
 type ItemMes = {
     concepto: string;
     monto: string;
     vencimiento: string | null;
+    pagado?: boolean;
     adjuntos?: Array<{ nombre: string; url: string }>;
 };
 
@@ -602,6 +605,12 @@ function alTocarEstado() {
                         <tr v-for="(item, i) in itemsDelMes" :key="i">
                             <td class="px-3 py-2 sm:px-4">
                                 {{ item.concepto }}
+                                <EstadoBadge
+                                    v-if="item.pagado"
+                                    estado="pagado"
+                                    label="Pagado"
+                                    class="ml-1 align-middle"
+                                />
                                 <span
                                     v-if="item.vencimiento"
                                     class="text-muted-foreground block text-xs sm:hidden"

@@ -84,7 +84,10 @@ class Expense extends Model implements Repartible
      * Cómo figura este gasto en el aviso al inquilino: su parte, y las facturas y
      * comprobantes como enlaces (WhatsApp no deja adjuntar archivos desde un link).
      *
-     * @return array{concepto: string, monto: string, vencimiento: string|null, adjuntos: list<array{nombre: string, url: string}>}
+     * `pagado` marca lo que el inquilino ya no debe. Un gasto a medias pagado
+     * no cuenta: lo pagó el dueño y la mitad del inquilino sigue pendiente.
+     *
+     * @return array{concepto: string, monto: string, vencimiento: string|null, pagado: bool, adjuntos: list<array{nombre: string, url: string}>}
      */
     public function paraElInquilino(): array
     {
@@ -94,6 +97,7 @@ class Expense extends Model implements Repartible
             'concepto' => $this->a_cargo_de === ACargoDe::Mitades ? $concepto.' (mitad)' : $concepto,
             'monto' => $this->montoDelInquilino(),
             'vencimiento' => $this->vencimiento?->format('d/m/Y'),
+            'pagado' => $this->a_cargo_de === ACargoDe::Inquilino && $this->pagado,
             'adjuntos' => array_values($this->documents->map(fn (ExpenseDocument $d) => [
                 'nombre' => $concepto.' — '.mb_strtolower($d->tipo->label()),
                 'url' => $d->enlaceCompartido(),

@@ -48,6 +48,7 @@ type ItemMes = {
     concepto: string;
     monto: string;
     vencimiento: string | null;
+    pagado?: boolean;
     adjuntos?: Array<{ nombre: string; url: string }>;
 };
 
@@ -434,6 +435,12 @@ function alTocarEstado(cargo: Cargo) {
                             >
                                 <td class="px-3 py-2 sm:px-4">
                                     {{ item.concepto }}
+                                    <EstadoBadge
+                                        v-if="item.pagado"
+                                        estado="pagado"
+                                        label="Pagado"
+                                        class="ml-1 align-middle"
+                                    />
                                     <span
                                         v-if="item.vencimiento"
                                         class="text-muted-foreground block text-xs sm:hidden"

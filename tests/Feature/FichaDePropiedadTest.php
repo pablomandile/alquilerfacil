@@ -179,9 +179,65 @@ class FichaDePropiedadTest extends TestCase
                 ->where('mensajeInquilino.alquiler.monto', '490000.00')
                 ->has('mensajeInquilino.gastos', 1)
                 ->where('mensajeInquilino.gastos.0.monto', '78500.00')
-                // Ya no se informa estado de pago acá.
+                // El cuadro marca el gasto pagado; el alquiler no lleva marca.
                 ->missing('mensajeInquilino.alquiler.pagado')
-                ->missing('mensajeInquilino.gastos.0.pagado')
+                ->where('mensajeInquilino.gastos.0.pagado', true)
+            );
+    }
+
+    public function test_un_gasto_a_medias_pagado_no_figura_como_pagado(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $propiedad = Property::factory()->create();
+        Contract::factory()->create(['property_id' => $propiedad->id]);
+
+        // Lo pagó el dueño entero: la mitad del inquilino sigue pendiente.
+        Expense::factory()->pagado()->create([
+            'property_id' => $propiedad->id,
+            'a_cargo_de' => ACargoDe::Mitades,
+            'monto' => 40000,
+            'vencimiento' => today()->startOfMonth()->addDays(14),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('propiedades.show', $propiedad))
+            ->assertInertia(fn ($page) => $page
+                ->where('mensajeInquilino.gastos.0.monto', '20000.00')
+                ->where('mensajeInquilino.gastos.0.pagado', false)
+            );
+    }
+
+    public function test_cobranzas_marca_el_gasto_pagado_del_inquilino(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $propiedad = Property::factory()->create();
+        $contrato = Contract::factory()->create(['property_id' => $propiedad->id]);
+        RentCharge::factory()->create([
+            'contract_id' => $contrato->id,
+            'periodo' => today()->startOfMonth(),
+        ]);
+
+        Expense::factory()->pagado()->create([
+            'property_id' => $propiedad->id,
+            'a_cargo_de' => ACargoDe::Inquilino,
+            'descripcion' => 'Expensas',
+            'vencimiento' => today()->startOfMonth()->addDays(5),
+        ]);
+        Expense::factory()->create([
+            'property_id' => $propiedad->id,
+            'a_cargo_de' => ACargoDe::Inquilino,
+            'descripcion' => 'Luz',
+            'vencimiento' => today()->startOfMonth()->addDays(20),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('cobranzas.index', ['periodo' => today()->format('Y-m')]))
+            ->assertInertia(fn ($page) => $page
+                // Los dos siguen en el aviso; sólo el pagado lleva la marca.
+                ->has('cargos.0.gastos', 2)
+                ->where('cargos.0.gastos.0.concepto', 'Expensas')
+                ->where('cargos.0.gastos.0.pagado', true)
+                ->where('cargos.0.gastos.1.pagado', false)
             );
     }
 
