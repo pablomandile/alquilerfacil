@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ACargoDe;
 use App\Enums\MedioPago;
 use App\Models\Expense;
 use App\Models\Payment;
@@ -39,11 +38,7 @@ class RentChargeController extends Controller
 
         $gastosPorPropiedad = Expense::query()
             ->whereIn('property_id', $propertyIds)
-            ->whereIn('a_cargo_de', [ACargoDe::Inquilino, ACargoDe::Mitades])
-            ->whereNotNull('vencimiento')
-            ->whereMonth('vencimiento', $periodo->month)
-            ->whereYear('vencimiento', $periodo->year)
-            ->orderBy('vencimiento')
+            ->delAvisoDe($periodo)
             ->with('documents')
             ->get()
             ->groupBy('property_id');

@@ -174,6 +174,25 @@ class Expense extends Model implements Repartible
     }
 
     /**
+     * Los gastos que van en el aviso al inquilino de un mes: los que están a su
+     * cargo, enteros o a medias, con período en ese mes. Va por el período y no
+     * por el vencimiento: una factura del mes puede vencer en el anterior.
+     *
+     * @param  Builder<Expense>  $query
+     * @return Builder<Expense>
+     */
+    public function scopeDelAvisoDe(Builder $query, CarbonInterface $mes): Builder
+    {
+        return $query
+            ->whereIn('a_cargo_de', [ACargoDe::Inquilino, ACargoDe::Mitades])
+            ->whereBetween('periodo', [
+                $mes->copy()->startOfMonth()->toDateString(),
+                $mes->copy()->endOfMonth()->toDateString(),
+            ])
+            ->orderBy('vencimiento');
+    }
+
+    /**
      * @param  Builder<Expense>  $query
      * @return Builder<Expense>
      */

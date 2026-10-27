@@ -104,32 +104,46 @@ class FichaDePropiedadTest extends TestCase
             'dia_vencimiento' => 10,
         ]);
 
-        // Entra: a cargo del inquilino, vence este mes.
+        $mes = today()->startOfMonth();
+
+        // Entra: a cargo del inquilino, período de este mes.
         Expense::factory()->create([
             'property_id' => $propiedad->id,
             'a_cargo_de' => ACargoDe::Inquilino,
             'categoria' => CategoriaGasto::Expensas,
             'descripcion' => 'Expensas',
             'monto' => 78500,
-            'vencimiento' => today()->startOfMonth()->addDays(14),
+            'periodo' => $mes,
+            'vencimiento' => $mes->copy()->addDays(14),
+        ]);
+        // Entra: período de este mes aunque venció el anterior (la luz que
+        // llega antes de fin de mes).
+        Expense::factory()->create([
+            'property_id' => $propiedad->id,
+            'a_cargo_de' => ACargoDe::Inquilino,
+            'descripcion' => 'Edenor',
+            'monto' => 61974.49,
+            'periodo' => $mes,
+            'vencimiento' => $mes->copy()->subDay(),
         ]);
         // No entra: a cargo de los propietarios.
         Expense::factory()->create([
             'property_id' => $propiedad->id,
             'a_cargo_de' => ACargoDe::Propietarios,
-            'vencimiento' => today()->startOfMonth()->addDays(10),
+            'periodo' => $mes,
         ]);
-        // No entra: vence el mes que viene.
+        // No entra: período del mes anterior, aunque vence en este.
         Expense::factory()->create([
             'property_id' => $propiedad->id,
             'a_cargo_de' => ACargoDe::Inquilino,
-            'vencimiento' => today()->addMonthNoOverflow()->startOfMonth()->addDays(5),
+            'periodo' => $mes->copy()->subMonthNoOverflow(),
+            'vencimiento' => $mes->copy()->addDays(5),
         ]);
-        // No entra: sin fecha de vencimiento.
+        // No entra: período del mes que viene.
         Expense::factory()->create([
             'property_id' => $propiedad->id,
             'a_cargo_de' => ACargoDe::Inquilino,
-            'vencimiento' => null,
+            'periodo' => $mes->copy()->addMonthNoOverflow(),
         ]);
 
         $this->actingAs($admin)
@@ -141,9 +155,12 @@ class FichaDePropiedadTest extends TestCase
                 // Sin cargo emitido: el alquiler sale del contrato.
                 ->where('mensajeInquilino.alquiler.monto', '478000.00')
                 ->where('mensajeInquilino.alquiler.vencimiento', today()->startOfMonth()->setDay(10)->format('d/m/Y'))
-                ->has('mensajeInquilino.gastos', 1)
-                ->where('mensajeInquilino.gastos.0.concepto', 'Expensas')
-                ->where('mensajeInquilino.gastos.0.monto', '78500.00')
+                // Ordenados por vencimiento: primero la luz que ya venció.
+                ->has('mensajeInquilino.gastos', 2)
+                ->where('mensajeInquilino.gastos.0.concepto', 'Edenor')
+                ->where('mensajeInquilino.gastos.0.monto', '61974.49')
+                ->where('mensajeInquilino.gastos.1.concepto', 'Expensas')
+                ->where('mensajeInquilino.gastos.1.monto', '78500.00')
             );
     }
 

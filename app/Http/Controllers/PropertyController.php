@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ACargoDe;
 use App\Enums\CategoriaTemaAdmin;
 use App\Enums\EstadoPropiedad;
 use App\Enums\TipoDocumentoPropiedad;
@@ -285,14 +284,10 @@ class PropertyController extends Controller
             $venceAlquiler = $mes->copy()->day($dia);
         }
 
-        // Gastos a cargo del inquilino, enteros o a medias, que vencen este mes.
-        // En los compartidos se informa sólo su mitad.
+        // Gastos a cargo del inquilino, enteros o a medias, del período de este
+        // mes. En los compartidos se informa sólo su mitad.
         $gastos = $contrato->property->expenses()
-            ->whereIn('a_cargo_de', [ACargoDe::Inquilino, ACargoDe::Mitades])
-            ->whereNotNull('vencimiento')
-            ->whereMonth('vencimiento', $mes->month)
-            ->whereYear('vencimiento', $mes->year)
-            ->orderBy('vencimiento')
+            ->delAvisoDe($mes)
             ->with('documents')
             ->get()
             ->map(fn (Expense $g) => $g->paraElInquilino());
