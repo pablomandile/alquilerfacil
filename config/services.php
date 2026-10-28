@@ -41,4 +41,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    // Acortador de los enlaces del aviso al inquilino. Sin token se mandan los
+    // enlaces firmados largos.
+    'zep' => [
+        'url' => env('ZEP_URL', 'https://zep.com.ar/api/v1'),
+        'token' => env('ZEP_TOKEN'),
+    ],
+
 ];
