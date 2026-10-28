@@ -30,3 +30,10 @@ Schedule::command('ajustes:proponer')
 Schedule::command('cargos:generar')
     ->monthlyOn(1, '06:00')
     ->withoutOverlapping();
+
+// Solo en la demo (APP_DEMO=true): la deja como nueva todas las noches. La app
+// corre en hora de Buenos Aires.
+Schedule::command('demo:reset')
+    ->dailyAt('04:00')
+    ->withoutOverlapping()
+    ->when(fn (): bool => (bool) config('demo.enabled'));

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Form, Head, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Form, Head, router, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import GoogleButton from '@/components/GoogleButton.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -31,6 +31,25 @@ defineProps<{
 // están en las props de la página y no en el submit del formulario.
 const page = usePage();
 const oauthError = computed(() => page.props.errors?.oauth);
+
+// Solo en la demo: los datos de acceso a la vista y un botón que entra directo.
+const demo = computed(() => page.props.demo);
+const entrando = ref(false);
+
+function entrarALaDemo(): void {
+    if (!demo.value) {
+        return;
+    }
+
+    router.post(
+        store().url,
+        { email: demo.value.email, password: demo.value.password },
+        {
+            onStart: () => (entrando.value = true),
+            onFinish: () => (entrando.value = false),
+        },
+    );
+}
 </script>
 
 <template>
@@ -49,6 +68,34 @@ const oauthError = computed(() => page.props.errors?.oauth);
     >
         {{ oauthError }}
     </div>
+
+    <section
+        v-if="demo"
+        class="border-primary/40 bg-primary/5 mb-4 space-y-3 rounded-lg border p-4"
+        aria-labelledby="titulo-demo"
+    >
+        <h2 id="titulo-demo" class="font-semibold">Probá la demo</h2>
+        <p class="text-muted-foreground text-sm">
+            Propiedades, contratos, ajustes por índice y cobranzas inventados,
+            con los IPC e ICL reales. Los datos se borran y vuelven a cargarse
+            cada noche.
+        </p>
+        <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+            <dt class="text-muted-foreground">Email</dt>
+            <dd class="break-all">{{ demo.email }}</dd>
+            <dt class="text-muted-foreground">Contraseña</dt>
+            <dd>{{ demo.password }}</dd>
+        </dl>
+        <Button
+            type="button"
+            class="w-full"
+            :disabled="entrando"
+            @click="entrarALaDemo"
+        >
+            <Spinner v-if="entrando" />
+            Entrar a la demo
+        </Button>
+    </section>
 
     <PasskeyVerify />
 
@@ -78,7 +125,7 @@ const oauthError = computed(() => page.props.errors?.oauth);
                 <div class="flex items-center justify-between">
                     <Label for="password">Contraseña</Label>
                     <TextLink
-                        v-if="canResetPassword"
+                        v-if="canResetPassword && !demo"
                         :href="request()"
                         class="text-sm"
                         :tabindex="5"
@@ -115,16 +162,18 @@ const oauthError = computed(() => page.props.errors?.oauth);
                 Iniciar sesión
             </Button>
 
-            <div class="flex items-center gap-3 text-sm">
-                <span class="bg-border h-px flex-1"></span>
-                <span class="text-muted-foreground">o</span>
-                <span class="bg-border h-px flex-1"></span>
-            </div>
+            <template v-if="!demo">
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="bg-border h-px flex-1"></span>
+                    <span class="text-muted-foreground">o</span>
+                    <span class="bg-border h-px flex-1"></span>
+                </div>
 
-            <GoogleButton :tabindex="6" />
+                <GoogleButton :tabindex="6" />
+            </template>
         </div>
 
-        <div class="text-muted-foreground text-center text-sm">
+        <div v-if="!demo" class="text-muted-foreground text-center text-sm">
             ¿No tenés cuenta?
             <TextLink :href="register()" :tabindex="7">Crear cuenta</TextLink>
         </div>

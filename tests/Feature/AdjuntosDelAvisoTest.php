@@ -117,6 +117,9 @@ class AdjuntosDelAvisoTest extends TestCase
 
     public function test_acorta_el_enlace_con_zep_y_lo_guarda(): void
     {
+        // El vencimiento se compara al segundo: sin congelar el reloj, el test
+        // falla si el segundo cambia entre que se acorta y que se verifica.
+        $this->freezeTime();
         Storage::fake('local');
         $this->conZep();
         Http::fake(['zep.com.ar/*' => Http::response(['data' => ['short_url' => 'https://zep.com.ar/aB3']], 201)]);

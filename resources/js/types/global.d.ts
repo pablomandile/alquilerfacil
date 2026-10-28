@@ -19,6 +19,8 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            /** Datos de acceso de la demo (APP_DEMO=true); null en la productiva. */
+            demo: { email: string; password: string } | null;
             [key: string]: unknown;
         };
     }

@@ -37,7 +37,15 @@ defineOptions({
 
     <h1 class="sr-only">Seguridad</h1>
 
-    <div class="space-y-6">
+    <div v-if="$page.props.demo">
+        <Heading
+            variant="small"
+            title="Seguridad"
+            description="En la demo la cuenta es compartida: la contraseña, la verificación en dos pasos y las passkeys no se pueden cambiar."
+        />
+    </div>
+
+    <div v-else class="space-y-6">
         <Heading
             variant="small"
             title="Cambiar contraseña"
@@ -108,12 +116,14 @@ defineOptions({
     </div>
 
     <ManageTwoFactor
+        v-if="!$page.props.demo"
         :canManageTwoFactor="canManageTwoFactor"
         :requiresConfirmation="requiresConfirmation"
         :twoFactorEnabled="twoFactorEnabled"
     />
 
     <ManagePasskeys
+        v-if="!$page.props.demo"
         :canManagePasskeys="canManagePasskeys"
         :passkeys="passkeys"
     />
