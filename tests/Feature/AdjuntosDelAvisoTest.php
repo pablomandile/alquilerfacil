@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ACargoDe;
+use App\Enums\CategoriaGasto;
 use App\Enums\TipoDocumentoGasto;
 use App\Models\Contract;
 use App\Models\Expense;
@@ -23,12 +24,17 @@ class AdjuntosDelAvisoTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function gastoConFactura(Property $propiedad): ExpenseDocument
-    {
+    private function gastoConFactura(
+        Property $propiedad,
+        CategoriaGasto $categoria = CategoriaGasto::Expensas,
+        TipoDocumentoGasto $tipoDocumento = TipoDocumentoGasto::Factura,
+    ): ExpenseDocument {
         $gasto = Expense::factory()->create([
             'property_id' => $propiedad->id,
             'a_cargo_de' => ACargoDe::Inquilino,
-            'descripcion' => 'Expensas',
+            'categoria' => $categoria,
+            'tipo' => $categoria->tipoPorDefecto(),
+            'descripcion' => $categoria->label(),
             'vencimiento' => today()->startOfMonth()->addDays(14),
         ]);
 
@@ -36,7 +42,7 @@ class AdjuntosDelAvisoTest extends TestCase
 
         return ExpenseDocument::factory()->create([
             'expense_id' => $gasto->id,
-            'tipo' => TipoDocumentoGasto::Factura,
+            'tipo' => $tipoDocumento,
             'nombre_original' => 'expensas.pdf',
             'path' => 'gastos/factura.pdf',
         ]);
@@ -53,8 +59,24 @@ class AdjuntosDelAvisoTest extends TestCase
         $this->actingAs($admin)->get(route('propiedades.show', $propiedad))
             ->assertInertia(fn ($page) => $page
                 ->has('mensajeInquilino.gastos.0.adjuntos', 1)
-                ->where('mensajeInquilino.gastos.0.adjuntos.0.nombre', 'Expensas — factura / expensa')
+                ->where('mensajeInquilino.gastos.0.adjuntos.0.nombre', 'Expensas — expensa')
                 ->where('mensajeInquilino.gastos.0.adjuntos.0.url', fn ($url) => str_contains($url, 'signature=')));
+    }
+
+    public function test_el_adjunto_se_llama_factura_expensa_o_comprobante_segun_el_gasto(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->admin()->create();
+        $propiedad = Property::factory()->create();
+        Contract::factory()->create(['property_id' => $propiedad->id]);
+        $this->gastoConFactura($propiedad, CategoriaGasto::Luz);
+        $this->gastoConFactura($propiedad, CategoriaGasto::Agua, TipoDocumentoGasto::Comprobante);
+
+        $this->actingAs($admin)->get(route('propiedades.show', $propiedad))
+            ->assertInertia(fn ($page) => $page
+                ->where('mensajeInquilino.gastos', fn ($gastos) => collect($gastos)
+                    ->pluck('adjuntos.0.nombre')->sort()->values()->all()
+                    === ['Agua — comprobante de pago', 'Luz — factura']));
     }
 
     public function test_el_enlace_firmado_abre_el_archivo_sin_sesion(): void

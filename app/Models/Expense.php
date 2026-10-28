@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\Repartible;
 use App\Enums\ACargoDe;
 use App\Enums\CategoriaGasto;
+use App\Enums\TipoDocumentoGasto;
 use App\Enums\TipoGasto;
 use Carbon\CarbonInterface;
 use Database\Factories\ExpenseFactory;
@@ -99,10 +100,25 @@ class Expense extends Model implements Repartible
             'vencimiento' => $this->vencimiento?->format('d/m/Y'),
             'pagado' => $this->a_cargo_de === ACargoDe::Inquilino && $this->pagado,
             'adjuntos' => array_values($this->documents->map(fn (ExpenseDocument $d) => [
-                'nombre' => $concepto.' — '.mb_strtolower($d->tipo->label()),
+                'nombre' => $concepto.' — '.$this->nombreDelDocumento($d),
                 'url' => $d->enlaceCompartido(),
             ])->all()),
         ];
+    }
+
+    /**
+     * Cómo se nombra un adjunto en el aviso. La factura se llama por lo que es:
+     * «expensa» si el gasto es de expensas y «factura» en cualquier otro caso.
+     */
+    private function nombreDelDocumento(ExpenseDocument $documento): string
+    {
+        if ($documento->tipo !== TipoDocumentoGasto::Factura) {
+            return mb_strtolower($documento->tipo->label());
+        }
+
+        return $this->categoria === CategoriaGasto::Expensas || $this->tipo === TipoGasto::Expensas
+            ? 'expensa'
+            : 'factura';
     }
 
     /** @return HasMany<ExpenseDocument, $this> */
