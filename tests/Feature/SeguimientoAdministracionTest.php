@@ -112,6 +112,85 @@ class SeguimientoAdministracionTest extends TestCase
         Storage::disk('local')->assertExists($ultima->attachments->first()->path);
     }
 
+    public function test_edita_una_entrada_y_le_suma_varias_imagenes(): void
+    {
+        $adjunto = $this->crearTemaConAdjunto($this->suya, 'nota.pdf');
+        $entrada = $adjunto->entry;
+
+        // Como lo manda el form: POST con `_method=PATCH`, porque lleva archivos.
+        $this->actingAs($this->duenio)
+            ->post(route('administracion.entradas.update', $entrada), [
+                '_method' => 'PATCH',
+                'fecha' => '2026-09-03',
+                'detalle' => 'Pregunté por la liquidación. Agrego las fotos del techo.',
+                'archivos' => [
+                    UploadedFile::fake()->image('techo-1.jpg'),
+                    UploadedFile::fake()->image('techo-2.jpg'),
+                ],
+            ])
+            ->assertRedirect();
+
+        $entrada->refresh();
+        $this->assertSame('2026-09-03', $entrada->fecha->toDateString());
+        $this->assertSame('Pregunté por la liquidación. Agrego las fotos del techo.', $entrada->detalle);
+
+        // El adjunto que ya tenía queda, y se suman los dos nuevos.
+        $this->assertEqualsCanonicalizing(
+            ['nota.pdf', 'techo-1.jpg', 'techo-2.jpg'],
+            $entrada->attachments()->pluck('nombre_original')->all(),
+        );
+        foreach ($entrada->attachments as $a) {
+            Storage::disk('local')->assertExists($a->path);
+        }
+    }
+
+    public function test_editar_sin_archivos_solo_cambia_el_texto(): void
+    {
+        $tema = $this->crearTema($this->suya);
+        $entrada = $tema->entries()->sole();
+
+        $this->actingAs($this->admin)
+            ->patch(route('administracion.entradas.update', $entrada), [
+                'fecha' => '2026-09-01',
+                'detalle' => 'Texto corregido.',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('Texto corregido.', $entrada->fresh()?->detalle);
+        $this->assertSame(0, $entrada->attachments()->count());
+    }
+
+    public function test_el_copropietario_no_edita_entradas_ajenas(): void
+    {
+        $entrada = $this->crearTema($this->ajena)->entries()->sole();
+
+        $this->actingAs($this->duenio)
+            ->patch(route('administracion.entradas.update', $entrada), [
+                'fecha' => '2026-09-01',
+                'detalle' => 'Intento de cambio',
+                'archivos' => [UploadedFile::fake()->image('x.jpg')],
+            ])
+            ->assertForbidden();
+
+        $this->assertNotSame('Intento de cambio', $entrada->fresh()?->detalle);
+        $this->assertSame(0, $entrada->attachments()->count());
+    }
+
+    public function test_editar_rechaza_un_adjunto_ejecutable(): void
+    {
+        $entrada = $this->crearTema($this->suya)->entries()->sole();
+
+        $this->actingAs($this->admin)
+            ->patch(route('administracion.entradas.update', $entrada), [
+                'fecha' => '2026-09-01',
+                'detalle' => 'Con un adjunto raro',
+                'archivos' => [UploadedFile::fake()->create('virus.exe', 10)],
+            ])
+            ->assertSessionHasErrors('archivos.0');
+
+        $this->assertNotSame('Con un adjunto raro', $entrada->fresh()?->detalle);
+    }
+
     public function test_marca_un_tema_como_resuelto_y_lo_reabre(): void
     {
         $tema = $this->crearTema($this->suya);

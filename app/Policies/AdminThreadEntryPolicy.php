@@ -14,6 +14,12 @@ class AdminThreadEntryPolicy
         return $user->puedeGestionar($thread->property);
     }
 
+    /** Editar una entrada y sumarle adjuntos. */
+    public function update(User $user, AdminThreadEntry $entry): bool
+    {
+        return $user->puedeGestionar($entry->thread->property);
+    }
+
     public function delete(User $user, AdminThreadEntry $entry): bool
     {
         return $user->puedeGestionar($entry->thread->property);

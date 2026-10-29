@@ -34,6 +34,28 @@ class AdminThreadEntryController extends Controller
         return back()->with('success', 'Entrada agregada.');
     }
 
+    /** Corregir la fecha o el texto de una entrada y sumarle adjuntos. */
+    public function update(Request $request, AdminThreadEntry $entry, RegistradorDeEntradas $registrador): RedirectResponse
+    {
+        $this->authorize('update', $entry);
+
+        $datos = $request->validate([
+            'fecha' => ['required', 'date'],
+            'detalle' => ['required', 'string', 'max:5000'],
+            ...$this->reglasDeArchivos(),
+        ]);
+
+        $registrador->editar(
+            $entry,
+            $datos['fecha'],
+            $datos['detalle'],
+            $this->archivos($request),
+            $request->user(),
+        );
+
+        return back()->with('success', 'Entrada actualizada.');
+    }
+
     public function destroy(AdminThreadEntry $entry): RedirectResponse
     {
         $this->authorize('delete', $entry);

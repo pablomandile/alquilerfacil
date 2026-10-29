@@ -5,6 +5,7 @@ import {
     Download,
     Eye,
     Paperclip,
+    Pencil,
     RotateCcw,
     Trash2,
 } from '@lucide/vue';
@@ -75,6 +76,46 @@ function agregarEntrada() {
             formEntrada.reset();
             formEntrada.fecha = hoy;
             if (archivosInput.value) archivosInput.value.value = '';
+        },
+    });
+}
+
+/* Edición de una entrada: corrige fecha y texto y suma adjuntos (los que ya
+   tiene se borran uno por uno desde su lista). Una entrada a la vez. Va como
+   POST con `_method=patch` porque lleva archivos. */
+const editando = ref<number | null>(null);
+const formEdicion = useForm<{
+    _method: 'patch';
+    fecha: string;
+    detalle: string;
+    archivos: File[];
+}>({
+    _method: 'patch',
+    fecha: '',
+    detalle: '',
+    archivos: [],
+});
+
+function editarEntrada(e: Entrada) {
+    formEdicion.clearErrors();
+    formEdicion.fecha = e.fecha_iso;
+    formEdicion.detalle = e.detalle;
+    formEdicion.archivos = [];
+    editando.value = e.id;
+}
+
+function elegirArchivosEdicion(evento: Event) {
+    formEdicion.archivos = Array.from(
+        (evento.target as HTMLInputElement).files ?? [],
+    );
+}
+
+function guardarEdicion(id: number) {
+    formEdicion.post(rutasEntradas.update(id).url, {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            editando.value = null;
         },
     });
 }
@@ -158,18 +199,116 @@ function verAdjunto(a: Adjunto) {
                                 · {{ e.registrado_por }}</span
                             >
                         </p>
-                        <Button
-                            v-if="puedeGestionar && tema.entradas.length > 1"
-                            size="icon"
-                            variant="ghost"
-                            class="size-6 shrink-0"
-                            @click="borrarEntrada(e.id)"
+                        <div
+                            v-if="puedeGestionar && editando !== e.id"
+                            class="flex shrink-0 items-center"
                         >
-                            <Trash2 class="size-3.5" />
-                            <span class="sr-only">Eliminar entrada</span>
-                        </Button>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                class="size-6"
+                                @click="editarEntrada(e)"
+                            >
+                                <Pencil class="size-3.5" />
+                                <span class="sr-only">Editar entrada</span>
+                            </Button>
+                            <Button
+                                v-if="tema.entradas.length > 1"
+                                size="icon"
+                                variant="ghost"
+                                class="size-6"
+                                @click="borrarEntrada(e.id)"
+                            >
+                                <Trash2 class="size-3.5" />
+                                <span class="sr-only">Eliminar entrada</span>
+                            </Button>
+                        </div>
                     </div>
-                    <p class="mt-0.5 text-sm whitespace-pre-line">
+
+                    <!-- Edición en el lugar -->
+                    <form
+                        v-if="editando === e.id"
+                        class="border-border/60 mt-2 space-y-3 rounded-lg border p-3"
+                        @submit.prevent="guardarEdicion(e.id)"
+                    >
+                        <div class="grid gap-3 sm:grid-cols-[10rem_1fr]">
+                            <div class="grid gap-1.5">
+                                <Label :for="`edicion-fecha-${e.id}`">
+                                    Fecha
+                                </Label>
+                                <Input
+                                    :id="`edicion-fecha-${e.id}`"
+                                    v-model="formEdicion.fecha"
+                                    type="date"
+                                />
+                                <InputError
+                                    :message="formEdicion.errors.fecha"
+                                />
+                            </div>
+                            <div class="grid gap-1.5">
+                                <Label :for="`edicion-detalle-${e.id}`">
+                                    Qué pasó
+                                </Label>
+                                <textarea
+                                    :id="`edicion-detalle-${e.id}`"
+                                    v-model="formEdicion.detalle"
+                                    rows="3"
+                                    class="border-input bg-background rounded-md border px-3 py-2 text-sm"
+                                />
+                                <InputError
+                                    :message="formEdicion.errors.detalle"
+                                />
+                            </div>
+                        </div>
+                        <div class="grid gap-1.5">
+                            <Label :for="`edicion-archivos-${e.id}`">
+                                Agregar adjuntos
+                            </Label>
+                            <input
+                                :id="`edicion-archivos-${e.id}`"
+                                type="file"
+                                multiple
+                                accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                                class="file:bg-secondary text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                                @change="elegirArchivosEdicion"
+                            />
+                            <p class="text-muted-foreground text-xs">
+                                Se suman a los que ya tiene. Podés elegir varios
+                                a la vez (PDF, imágenes o Word, hasta 10 MB cada
+                                uno).
+                            </p>
+                            <InputError
+                                :message="
+                                    formEdicion.errors.archivos ??
+                                    Object.entries(formEdicion.errors).find(
+                                        ([k]) => k.startsWith('archivos.'),
+                                    )?.[1]
+                                "
+                            />
+                        </div>
+                        <div class="flex gap-2">
+                            <Button
+                                type="submit"
+                                size="sm"
+                                :disabled="
+                                    formEdicion.processing ||
+                                    !formEdicion.detalle
+                                "
+                            >
+                                Guardar
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                @click="editando = null"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </form>
+
+                    <p v-else class="mt-0.5 text-sm whitespace-pre-line">
                         {{ e.detalle }}
                     </p>
                     <ul v-if="e.adjuntos.length" class="mt-2 space-y-1">

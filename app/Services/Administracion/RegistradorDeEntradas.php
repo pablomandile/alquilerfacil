@@ -9,9 +9,10 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 
 /**
- * Crea una entrada de seguimiento y guarda sus adjuntos en el disco privado.
- * Lo usan tanto el alta de un tema (su primera entrada) como el agregado de una
- * entrada nueva, para que la lógica de archivos viva en un solo lugar.
+ * Crea y edita las entradas de seguimiento y guarda sus adjuntos en el disco
+ * privado. Lo usan el alta de un tema (su primera entrada), el agregado de una
+ * entrada nueva y la edición de una existente, para que la lógica de archivos
+ * viva en un solo lugar.
  */
 class RegistradorDeEntradas
 {
@@ -30,6 +31,38 @@ class RegistradorDeEntradas
             'detalle' => $detalle,
             'registrado_por' => $usuario?->id,
         ]);
+
+        $this->adjuntar($entrada, $archivos, $usuario);
+
+        return $entrada;
+    }
+
+    /**
+     * Corrige la fecha y el texto de una entrada y le suma adjuntos. Los que ya
+     * tenía quedan: se borran uno por uno desde su propio botón.
+     *
+     * @param  list<UploadedFile>  $archivos
+     */
+    public function editar(
+        AdminThreadEntry $entrada,
+        string $fecha,
+        string $detalle,
+        array $archivos,
+        ?User $usuario,
+    ): AdminThreadEntry {
+        $entrada->update(['fecha' => $fecha, 'detalle' => $detalle]);
+
+        $this->adjuntar($entrada, $archivos, $usuario);
+
+        return $entrada;
+    }
+
+    /**
+     * @param  list<UploadedFile>  $archivos
+     */
+    private function adjuntar(AdminThreadEntry $entrada, array $archivos, ?User $usuario): void
+    {
+        $tema = $entrada->thread;
 
         foreach ($archivos as $archivo) {
             $path = $archivo->storeAs(
@@ -50,7 +83,5 @@ class RegistradorDeEntradas
                 'subido_por' => $usuario?->id,
             ]);
         }
-
-        return $entrada;
     }
 }

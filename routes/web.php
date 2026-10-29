@@ -118,6 +118,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->whereNumber('thread')->name('administracion.temas.destroy');
     Route::post('propiedades/administracion/{thread}/entradas', [AdminThreadEntryController::class, 'store'])
         ->whereNumber('thread')->name('administracion.entradas.store');
+    // Va con archivos: el form lo manda como POST con `_method=PATCH`.
+    Route::patch('propiedades/administracion/entradas/{entry}', [AdminThreadEntryController::class, 'update'])
+        ->whereNumber('entry')->name('administracion.entradas.update');
     Route::delete('propiedades/administracion/entradas/{entry}', [AdminThreadEntryController::class, 'destroy'])
         ->whereNumber('entry')->name('administracion.entradas.destroy');
     Route::get('propiedades/administracion/adjuntos/{attachment}', [AdminThreadAttachmentController::class, 'show'])
