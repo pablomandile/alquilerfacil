@@ -57,7 +57,12 @@ class DemoReset extends Command
         foreach ($disco->directories() as $carpeta) {
             $disco->deleteDirectory($carpeta);
         }
-        $disco->delete($disco->files());
+        // Menos los ocultos de la raíz: el `.gitignore` es del repo, y sin él la
+        // copia queda con el `git status` sucio y el próximo `git pull` choca.
+        $disco->delete(array_values(array_filter(
+            $disco->files(),
+            fn (string $archivo) => ! str_starts_with(basename($archivo), '.'),
+        )));
 
         // Lo que los visitantes hicieron durante el día no tiene por qué quedar.
         $log = storage_path('logs/laravel.log');
