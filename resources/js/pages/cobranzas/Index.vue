@@ -483,7 +483,14 @@ function alTocarEstado(cargo: Cargo) {
                     <div
                         class="bg-muted/40 flex flex-wrap items-center gap-2 border-t p-3"
                     >
-                        <Button size="sm" @click="copiarMensaje(cargo)">
+                        <!-- Con el aviso enviado, copiar y WhatsApp quedan
+                             deshabilitados para no mandarlo dos veces; vuelven
+                             al pasarlo a pendiente. -->
+                        <Button
+                            size="sm"
+                            :disabled="cargo.envio.enviado"
+                            @click="copiarMensaje(cargo)"
+                        >
                             <Check
                                 v-if="copiadoId === cargo.id"
                                 class="size-4"
@@ -495,7 +502,17 @@ function alTocarEstado(cargo: Cargo) {
                                     : 'Copiar mensaje'
                             }}
                         </Button>
-                        <Button as-child size="sm" variant="outline">
+                        <!-- Un enlace no se deshabilita: enviado, va un botón. -->
+                        <Button
+                            v-if="cargo.envio.enviado"
+                            size="sm"
+                            variant="outline"
+                            disabled
+                        >
+                            <MessageCircle class="size-4" />
+                            WhatsApp
+                        </Button>
+                        <Button v-else as-child size="sm" variant="outline">
                             <a
                                 :href="linkWhatsappDeCargo(cargo)"
                                 target="_blank"

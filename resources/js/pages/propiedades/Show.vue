@@ -653,12 +653,24 @@ function alTocarEstado() {
                 <div
                     class="bg-muted/40 flex flex-wrap items-center gap-2 border-t p-3"
                 >
-                    <Button size="sm" @click="copy(textoMensaje)">
+                    <!-- Con el aviso enviado, copiar y WhatsApp quedan
+                         deshabilitados para no mandarlo dos veces; vuelven al
+                         pasarlo a pendiente. -->
+                    <Button
+                        size="sm"
+                        :disabled="enviado"
+                        @click="copy(textoMensaje)"
+                    >
                         <Check v-if="copied" class="size-4" />
                         <Copy v-else class="size-4" />
                         {{ copied ? 'Copiado' : 'Copiar mensaje' }}
                     </Button>
-                    <Button as-child size="sm" variant="outline">
+                    <!-- Un enlace no se deshabilita: enviado, va un botón. -->
+                    <Button v-if="enviado" size="sm" variant="outline" disabled>
+                        <MessageCircle class="size-4" />
+                        WhatsApp
+                    </Button>
+                    <Button v-else as-child size="sm" variant="outline">
                         <a
                             :href="linkWhatsapp"
                             target="_blank"
